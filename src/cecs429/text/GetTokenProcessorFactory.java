@@ -15,10 +15,10 @@ public class GetTokenProcessorFactory {
         if(processorType == null){  
              return null;  
             }  
-          if(processorType.equalsIgnoreCase("ADVANCE")) {  
+          if(processorType.equalsIgnoreCase("advance")) {  
                  return new AdvanceTokenProcessor();  
                }   
-           else if(processorType.equalsIgnoreCase("SOUNDEX")){  
+           else if(processorType.equalsIgnoreCase("soundex")){  
                 return new SoundexTokenProcessor();  
             }   
          return null;

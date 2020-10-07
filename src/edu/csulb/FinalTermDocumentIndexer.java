@@ -30,15 +30,21 @@ public class FinalTermDocumentIndexer {
 	public static void main(String[] args) {
 		Scanner sc = new Scanner(System.in);
 		Gson gson = new Gson();
+                
 		System.out.println("Enter a directory/corpus to index");
 		String dir = sc.nextLine();
-		String soundexDir = "/Users/krutikapathak/eclipse-workspace/Milestone1/mlb-articles-4000/";
-		// "/Users/krutikapathak/eclipse-workspace/Milestone1/articles";
+		String soundexDir = "C:/Users/15625/Documents/NetBeansProjects/SearchEngine_Milestone1/mlb-articles-4000/";
+		
+                //Index corpus for Boolean Queries 
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(dir).toAbsolutePath(), getExtension(dir));
-		DocumentCorpus corpus1 = DirectoryCorpus.loadTextDirectory(Paths.get(soundexDir).toAbsolutePath(), getExtension(soundexDir));
+                //Index corpus for Soundex 
+		DocumentCorpus corpusSoundex = DirectoryCorpus.loadTextDirectory(Paths.get(soundexDir).toAbsolutePath(), getExtension(soundexDir));
+                
 		long Start = System.currentTimeMillis();
-		Index index = indexCorpus(corpus);
-		Index soundexIndex = indexAuthorCorpus(corpus1);
+                
+		Index index = indexCorpus(corpus,"advance");
+		Index soundexIndex = indexCorpus(corpusSoundex,"soundex");
+                
 		long Stop = System.currentTimeMillis();
 		long timeTaken = Stop - Start;
 		System.out.println("Indexing time: " + timeTaken);
@@ -50,6 +56,7 @@ public class FinalTermDocumentIndexer {
 		while (!query.equalsIgnoreCase("quit")) {
 			BooleanQueryParser bqp = new BooleanQueryParser();
 			QueryComponent qc = bqp.parseQuery(query);
+                        //Special Queries
 			if (query.startsWith(":")) {
 				splittedString = query.split(" ");
 				switch (splittedString[0]) {
@@ -65,7 +72,7 @@ public class FinalTermDocumentIndexer {
 				case ":index": {
 					corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(), ".json");
 					Start = System.currentTimeMillis();
-					index = indexCorpus(corpus);
+					index = indexCorpus(corpus,"advance");
 					Stop = System.currentTimeMillis();
 					timeTaken = Stop - Start;
 					System.out.println("Indexing time: " + timeTaken);
@@ -89,7 +96,7 @@ public class FinalTermDocumentIndexer {
 				case ":author": {
 					for (Posting p : soundexIndex.getPostings(splittedString[1])) {
 
-						String docName = corpus1.getDocument(p.getDocumentId()).getTitle();
+						String docName = corpusSoundex.getDocument(p.getDocumentId()).getTitle();
 						System.out.println("Document " + docName);
 						Reader reader;
 						try {
@@ -109,75 +116,73 @@ public class FinalTermDocumentIndexer {
 					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
 				}
 				System.out.println("Word found in " + result.size() + " documents!!");
-//			System.out.println("Enter a word to search");
 			}
 			query = sc.nextLine();
 		}
 		sc.close();
 	}
 
-	public static Index indexCorpus(DocumentCorpus corpus) {
+	public static Index indexCorpus(DocumentCorpus corpus, String processorType) {
 		EnglishTokenStream tokens = null;
-		AdvanceTokenProcessor processor = new AdvanceTokenProcessor();
-		Reader content;
-		Iterable<Document> list = corpus.getDocuments();
+                GetTokenProcessorFactory processorFactory = new GetTokenProcessorFactory();
+                TokenProcessor processor = processorFactory.GetTokenProcessor(processorType);
+                
+                Reader content;
+                Iterable<Document> list = corpus.getDocuments();
+                
+                if(processorType == "soundex"){
+                    //indexing for soundex
+                    SoundexIndex docindex = new SoundexIndex();
 
-		PositionalInvertedIndex docindex = new PositionalInvertedIndex();
-		try {
-			for (Document d : list) {
-				int i = 0;
-				content = d.getContent();
-				tokens = new EnglishTokenStream(content);
-				Iterable<String> token = tokens.getTokens();
+                    try {
+                            for (Document d : list) {
 
-				for (String word : token) {
-					List<String> words = (List<String>) processor.processToken(word);
-					for (String term : words) {
-						docindex.addTerm(term, d.getId(), i);
-						i = i + 1;
-					}
-				}
-				content.close();
-			}
-			return docindex;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.out.println(ex.toString());
-		}
-		return null;
-	}
+                                    content = d.getContent();
+                                    Gson gson = new Gson();
+                                    JsonObject doc = gson.fromJson(content, JsonObject.class);
 
-	public static Index indexAuthorCorpus(DocumentCorpus corpus1) {
-		EnglishTokenStream tokens = null;
-		GetTokenProcessorFactory processorFactory = new GetTokenProcessorFactory();
-		TokenProcessor processor = processorFactory.GetTokenProcessor("SOUNDEX");
-		Reader content;
-		Iterable<Document> list = corpus1.getDocuments();
+                                    String authorName = doc.get("author").getAsString();
 
-		SoundexIndex docindex = new SoundexIndex();
+                                    if (!authorName.isEmpty()) {
+                                            List<String> words = (List<String>) processor.processToken(authorName);
+                                            for (String word : words) {
+                                                    docindex.addTerm(word, d.getId());
+                                            }
+                                    }
+                                    content.close();
+                            }
+                            return docindex;
+                    } catch (Exception ex) {
+                            ex.printStackTrace();
+                            System.out.println(ex.toString());
+                    }
+            
+                }else {
+                   //indexing for positional inverted 
+                    PositionalInvertedIndex docindex = new PositionalInvertedIndex();
+                    try {
+                            for (Document d : list) {
+                                    int i = 0;
+                                    content = d.getContent();
+                                    tokens = new EnglishTokenStream(content);
+                                    Iterable<String> token = tokens.getTokens();
 
-		try {
-			for (Document d : list) {
-
-				content = d.getContent();
-				Gson gson = new Gson();
-				JsonObject doc = gson.fromJson(content, JsonObject.class);
-
-				String authorName = doc.get("author").getAsString();
-
-				if (!authorName.isEmpty()) {
-					List<String> words = (List<String>) processor.processToken(authorName);
-					for (String word : words) {
-						docindex.addTerm(word, d.getId());
-					}
-				}
-				content.close();
-			}
-			return docindex;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			System.out.println(ex.toString());
-		}
+                                    for (String word : token) {
+                                            List<String> words = (List<String>) processor.processToken(word);
+                                            for (String term : words) {
+                                                    docindex.addTerm(term, d.getId(), i);
+                                                    i = i + 1;
+                                            }
+                                    }
+                                    content.close();
+                            }
+                            return docindex;
+                    } catch (Exception ex) {
+                            ex.printStackTrace();
+                            System.out.println(ex.toString());
+                    }
+                }
+		
 		return null;
 	}
 	

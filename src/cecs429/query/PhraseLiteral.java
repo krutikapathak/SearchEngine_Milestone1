@@ -20,14 +20,8 @@ public class PhraseLiteral implements QueryComponent {
 	 */
 	public PhraseLiteral(List<String> terms) {
 		for (String term : terms) {
-//			String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
-//			String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-//			String mTerm = AdvanceTokenProcessor.stemWord(processedmTerm);
-//			System.out.println(mTerm);
 			mTerms.add(term);
-			// mTerms.addAll(term);
 		}
-		// mTerms.addAll(terms);
 	}
 
 	/**
@@ -37,12 +31,7 @@ public class PhraseLiteral implements QueryComponent {
 	public PhraseLiteral(String terms) {
 		List<String> termList = Arrays.asList(terms.split(" "));
 		for (String term : termList) {
-//			String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
-//			String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-//			String mTerm = AdvanceTokenProcessor.stemWord(processedmTerm);
-//			System.out.println(mTerm);
 			mTerms.add(term);
-			// mTerms.addAll(term);
 		}
 	}
 
@@ -62,9 +51,6 @@ public class PhraseLiteral implements QueryComponent {
 		} while (i < mTerms.size());
 
 		return result;
-		// TODO: program this method. Retrieve the postings for the individual terms in
-		// the phrase,
-		// and positional merge them together.
 	}
 
 	private List<Posting> tempResult(List<Posting> docListOne, List<Posting> docListTwo) {
