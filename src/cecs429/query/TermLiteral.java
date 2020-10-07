@@ -17,17 +17,11 @@ public class TermLiteral implements QueryComponent {
 	}
 	
 	public String getTerm() {
-//		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(mTerm);
-//		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-//		mTerm = AdvanceTokenProcessor.stemWord(processedmTerm);
 		return mTerm;
 	}
 
 	@Override
 	public List<Posting> getPostings(Index index) {
-//		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(mTerm);
-//		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-//		mTerm = AdvanceTokenProcessor.stemWord(processedmTerm);
 		return index.getPostings(mTerm);
 	}
 	

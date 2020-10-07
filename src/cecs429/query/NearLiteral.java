@@ -57,9 +57,6 @@ public class NearLiteral implements QueryComponent {
 
 		List<Posting> tempResult = new ArrayList<Posting>();
 
-//                System.out.println(docListOne.size());
-//                System.out.println(docListTwo.size());
-
 		while (i < docListOne.size() && j < docListTwo.size()) {
 			if (docListOne.get(i).getDocumentId() == docListTwo.get(j).getDocumentId()) {
 
@@ -70,7 +67,6 @@ public class NearLiteral implements QueryComponent {
 				while (a < positionListOne.size() && b < positionListTwo.size()) {
 
 					if (positionListTwo.get(b) == positionListOne.get(a) + distance) {
-
 						tempResult.add(docListTwo.get(j));
 						break;
 					} else if (positionListTwo.get(b) > positionListOne.get(a)) {
@@ -101,9 +97,9 @@ public class NearLiteral implements QueryComponent {
 
 	}
 
-//	@Override
-//	public String toString() {
-//		return "\"" + String.join(" ", mTerms) + "\"";
-//	}
+	@Override
+	public String toString() {
+		return "\"" + String.join(" ", firstTerm + " " + lastTerm) + "\"";
+	}
 
 }

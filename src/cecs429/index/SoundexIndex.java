@@ -60,18 +60,18 @@ public class SoundexIndex implements Index {
 	}
 
 	public static String soundex(String s) {
-		char[] x = s.toUpperCase().toCharArray();
+		char[] input = s.toUpperCase().toCharArray();
 		// retain first letter
-		String output = x[0] + "";
+		String output = input[0] + "";
 
 		// replace consonants with digits
-		for (int i = 0; i < x.length; i++) {
-			switch (x[i]) {
+		for (int i = 0; i < input.length; i++) {
+			switch (input[i]) {
 			case 'B':
 			case 'F':
 			case 'P':
 			case 'V':
-				x[i] = '1';
+				input[i] = '1';
 				break;
 
 			case 'C':
@@ -82,41 +82,43 @@ public class SoundexIndex implements Index {
 			case 'S':
 			case 'X':
 			case 'Z':
-				x[i] = '2';
+				input[i] = '2';
 				break;
 
 			case 'D':
 			case 'T':
-				x[i] = '3';
+				input[i] = '3';
 				break;
 
 			case 'L':
-				x[i] = '4';
+				input[i] = '4';
 				break;
 
 			case 'M':
 			case 'N':
-				x[i] = '5';
+				input[i] = '5';
 				break;
 
 			case 'R':
-				x[i] = '6';
+				input[i] = '6';
 				break;
 
 			default:
-				x[i] = '0';
+				input[i] = '0';
 				break;
 			}
 		}
 
 		// remove duplicates
-		for (int i = 1; i < x.length; i++)
-			if (x[i] != x[i - 1] && x[i] != '0')
-				output += x[i];
+                for (int i = 1; i<input.length; i++)
+                  if (input[i] != input[i - 1] && input[i] != '0')
+                    output += input[i];
 
-		// right pad with zeros or truncate
-		output = output + "0000";
-		return output.substring(0, 4);
+                // pad with zeros if length is < 4
+                for (int i=output.length(); i<4; i++){
+                    output = output + "0";
+                }
+                return output;
 	}
 
 }
