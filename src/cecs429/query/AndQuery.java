@@ -26,9 +26,9 @@ public class AndQuery implements QueryComponent {
 		List<Posting> result = new ArrayList<Posting>();
 		List<List<Posting>> tempList = new ArrayList<>();
 
-		// TODO: program the merge for an AndQuery, by gathering the postings of the
+		// program the merge for an AndQuery, by gathering the postings of the
 		// composed QueryComponents and
-		// intersecting the resulting postings.
+		
 
 		for (QueryComponent q : mChildren) {
 			tempList.add(q.getPostings(index));
@@ -37,6 +37,7 @@ public class AndQuery implements QueryComponent {
 		List<Posting> tempResult = tempList.get(0);
 		int i = 1;
 		do {
+			// Adding the final intersected list to the Result
 			result.clear();
 			result = tempResult(tempResult, tempList.get(i));
 			i++;
@@ -51,6 +52,7 @@ public class AndQuery implements QueryComponent {
 		int j = 0;
 		List<Posting> tempResult = new ArrayList<Posting>();
 
+		// intersecting the resulting postings.
 		while (i < first.size() && j < second.size()) {
 			if (first.get(i).getDocumentId() == second.get(j).getDocumentId()) {
 				tempResult.add(first.get(i));

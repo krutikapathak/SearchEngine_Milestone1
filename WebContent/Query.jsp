@@ -49,7 +49,7 @@ function validate() {
 	Index index = (Index) session.getAttribute("Index");
 	DocumentCorpus corpus = (DocumentCorpus) session.getAttribute("DocumentCorpus");
 	Index soundexIndex = (Index) session.getAttribute("soundexIndex");
-	DocumentCorpus corpus1 = (DocumentCorpus) session.getAttribute("DocumentCorpus1");
+	DocumentCorpus soundexCorpus = (DocumentCorpus) session.getAttribute("DocumentCorpus1");
 	String soundexDir = (String) session.getAttribute("soundexDir");
 	
 	String[] splittedString;
@@ -57,6 +57,7 @@ function validate() {
 	String query = request.getParameter("query");
 	BooleanQueryParser bqp = new BooleanQueryParser();
 	QueryComponent qc = bqp.parseQuery(query);
+	  //Special Queries
 	if (query.startsWith(":")) {
 		splittedString = query.split(" ");
 		switch (splittedString[0]) {
@@ -77,7 +78,7 @@ function validate() {
 			session.setAttribute("Directory", directory);
 			session.setAttribute("DocumentCorpus", corpus);
 			long Start = System.currentTimeMillis();
-			index = FinalTermDocumentIndexer.indexCorpus(corpus);
+			index = FinalTermDocumentIndexer.indexCorpus(corpus, "advance");
 			long Stop = System.currentTimeMillis();
 			long timeTaken = Stop - Start;
 			resultTitle = "Your directory <b>\"" + directory + "\"</b>";
@@ -104,7 +105,7 @@ function validate() {
 		
 		case ":author": {
 			List<Posting> result = soundexIndex.getPostings(splittedString[1]);
-			resultTitle = "<b>Word found in " + result.size() + " documents!!</b>";
+			resultTitle = "Your query <b>" + splittedString[1] + "</b> returned <b>" + result.size() + "</b> documents!!";
 			if(result.size() > 0) {
 				resultTitle += "<br>Click on the document you wish to open<br>";
 			} else {
@@ -114,17 +115,13 @@ function validate() {
 			resultList += "<tr><td style='text-align: center;'><b>Author</b></td>";
 			resultList += "<td style='text-align: center;'><b>Document Name</b></td></tr>";
 			for (Posting p : result) {
-				String docName = corpus1.getDocument(p.getDocumentId()).getTitle();
+				String docName = soundexCorpus.getDocument(p.getDocumentId()).getTitle();
 				Reader reader;
-				try {
-					reader = new FileReader(soundexDir + docName);
+					reader = soundexCorpus.getDocument(p.getDocumentId()).getContent();
 					Gson gson = new Gson();
 					JsonObject doc = gson.fromJson(reader, JsonObject.class);
 					resultList += "<tr><td><b></b>" + doc.get("author").getAsString() + "</td>";
 					resultList += "<td><a href = 'Document.jsp?param=a" + p.getDocumentId() + "'>" + docName + "</a></td></tr>";
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				}
 			}
 			resultList += "</table>";
 		}
@@ -134,12 +131,13 @@ function validate() {
 		response.sendRedirect("Web.jsp");
 	}
 	else {
+		// Boolean query retrieval
 		if(index !=null) {
 			List<Posting> result = qc.getPostings(index);
 			for (Posting p : result) {
 				resultList += "<a href = 'Document.jsp?param=" + p.getDocumentId() + "'>" + corpus.getDocument(p.getDocumentId()).getTitle() + "</a> </br>";
 			}
-			resultTitle = "<b>Word found in " + result.size() + " documents!!</b>";
+			resultTitle = "Your query <b>" + query + "</b> returned <b>" + result.size() + "</b> documents!!";
 			if(result.size() > 0) {
 				resultTitle += "<br>Click on the document you wish to open<br>";
 			}

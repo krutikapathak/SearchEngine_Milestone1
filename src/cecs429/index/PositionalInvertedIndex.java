@@ -41,6 +41,7 @@ public class PositionalInvertedIndex implements Index {
 				docList.add(lastIndex, existingPosting);
 				refinedVocab.replace(term, docList);
 			} else {
+				// add the positions if doc ID already exists
 				pos.add(position);
 				Posting posting = new Posting(documentId, pos);
 				docList.add(posting);
@@ -51,6 +52,7 @@ public class PositionalInvertedIndex implements Index {
 
 	@Override
 	public List<Posting> getPostings(String term) {
+		//Process query and fetch the postings
 		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
 		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
 		term = AdvanceTokenProcessor.stemWord(processedmTerm);

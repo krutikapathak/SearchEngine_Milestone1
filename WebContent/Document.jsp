@@ -24,6 +24,7 @@
 	int docId = Integer.parseInt(param);
 	PrintWriter pwriter = response.getWriter();
 	
+	//Open the user selected document
 	Document doc = corpus.getDocument(docId);
 	String docName = doc.getTitle();
 	Reader reader = doc.getContent();

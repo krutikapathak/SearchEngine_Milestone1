@@ -15,9 +15,11 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 	@Override
 	public List<String> processToken(String token) {
 		List<String> Stringtokens = new ArrayList<>();
+		// Removing non-alphanumeric, ' and " characters
 		String alphanumeric_string = removenonAlphanumeric(token);
 		String processed = alphanumeric_string.replaceAll("\'", "").replaceAll("\"", "");
 
+		//splitting hyphened words and stemming 
 		if (token.contains("-")) {
 			String[] splitToken = processed.split("-");
 			String combinedtoken = processed.replaceAll("-", "").replaceAll(" ", "");
@@ -26,6 +28,7 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 			}
 			Stringtokens.add(stemWord(combinedtoken));
 		} else {
+			//stemming normal tokens(without hyphens)
 			Stringtokens.add(stemWord(processed));
 		}
 		return Stringtokens;
@@ -33,6 +36,7 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 
 	public static String stemWord(String token) {
 		SnowballStemmer stemmer = null;
+		// stem the token and return stemmed word
 		try {
 			Class stemClass = Class.forName("cecs429.snowball.ext.englishStemmer");
 			stemmer = (SnowballStemmer) stemClass.newInstance();
@@ -50,6 +54,7 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 	}
 
 	public static String removenonAlphanumeric(String token) {
+		//remove the non-alphanumeric characters from beginning and end
 		for (int i = 0; i < token.length(); i++) {
 			for (int j = (token.length()) - 1; j > 0; j--) {
 
@@ -60,6 +65,6 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 				}
 			}
 		}
-		return Character.isLetterOrDigit(token.charAt(0)) ? token.substring(0, 1) : "";
+		return "";
 	}
 }

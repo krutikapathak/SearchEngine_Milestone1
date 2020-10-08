@@ -67,6 +67,17 @@ public class SoundexIndex implements Index {
 		// replace consonants with digits
 		for (int i = 0; i < input.length; i++) {
 			switch (input[i]) {
+			case 'A':
+			case 'E':
+			case 'I':
+			case 'O':
+			case 'U':
+			case 'H':
+			case 'W':
+			case 'Y':
+				input[i] = '0';
+				break;
+
 			case 'B':
 			case 'F':
 			case 'P':
@@ -102,23 +113,19 @@ public class SoundexIndex implements Index {
 			case 'R':
 				input[i] = '6';
 				break;
-
-			default:
-				input[i] = '0';
-				break;
 			}
 		}
 
 		// remove duplicates
-                for (int i = 1; i<input.length; i++)
-                  if (input[i] != input[i - 1] && input[i] != '0')
-                    output += input[i];
+		for (int i = 1; i < input.length; i++)
+			if (input[i] != input[i - 1] && input[i] != '0')
+				output += input[i];
 
-                // pad with zeros if length is < 4
-                for (int i=output.length(); i<4; i++){
-                    output = output + "0";
-                }
-                return output;
+		// pad with zeros if length is < 4
+		for (int i = output.length(); i < 4; i++) {
+			output = output + "0";
+		}
+		return output;
 	}
 
 }

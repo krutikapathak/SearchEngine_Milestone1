@@ -40,14 +40,16 @@ function validate() {
 		String directory = request.getParameter("dir");
 		String htmlCode = "Your directory <b>\"" + directory + "\"</b>";
 		
-		String soundexDir = "/Users/krutikapathak/eclipse-workspace/GUI/mlb-articles-4000/";
+		String soundexDir = "/Users/krutikapathak/eclipse-workspace/Milestone1/mlb-articles-4000/";
 		
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(directory).toAbsolutePath(), getExtension(directory));
-		DocumentCorpus corpus1 = DirectoryCorpus.loadTextDirectory(Paths.get(soundexDir).toAbsolutePath(), getExtension(soundexDir));
+		DocumentCorpus soundexCorpus = DirectoryCorpus.loadTextDirectory(Paths.get(soundexDir).toAbsolutePath(), getExtension(soundexDir));
 		
 		long Start = System.currentTimeMillis();
-		Index index = FinalTermDocumentIndexer.indexCorpus(corpus);
-		Index soundexIndex = FinalTermDocumentIndexer.indexAuthorCorpus(corpus1);
+		 //Index corpus for Boolean Queries 
+		Index index = FinalTermDocumentIndexer.indexCorpus(corpus, "advance");
+		 //Index corpus for Soundex 
+		Index soundexIndex = FinalTermDocumentIndexer.indexCorpus(soundexCorpus, "soundex");
 		long Stop = System.currentTimeMillis();
 		long timeTaken = (Stop - Start);
 		
@@ -55,7 +57,7 @@ function validate() {
 		session.setAttribute("soundexDir", soundexDir);
 		session.setAttribute("soundexIndex", soundexIndex);
 		session.setAttribute("DocumentCorpus", corpus);
-		session.setAttribute("DocumentCorpus1", corpus1);
+		session.setAttribute("DocumentCorpus1", soundexCorpus);
 		session.setAttribute("Directory", directory);
 		
 		htmlCode += " has been indexed in <b>" + timeTaken + "</b> ms!";
