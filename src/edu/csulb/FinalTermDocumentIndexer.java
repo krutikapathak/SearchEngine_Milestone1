@@ -1,15 +1,19 @@
 package edu.csulb;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -36,7 +40,7 @@ public class FinalTermDocumentIndexer {
 		System.out.println("Enter a directory/corpus to index");
 		String dir = sc.nextLine();
 		String soundexDir = "mlb-articles-4000";
-		//	/Users/krutikapathak/eclipse-workspace/Milestone1/articles/
+		// /Users/krutikapathak/eclipse-workspace/Milestone1/articles/
 
 		// Index corpus for Boolean Queries
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(dir).toAbsolutePath(), getExtension(dir));
@@ -123,7 +127,8 @@ public class FinalTermDocumentIndexer {
 	}
 
 	public static Index indexCorpus(DocumentCorpus corpus, String processorType) {
-		EnglishTokenStream tokens = null;
+		EnglishTokenStream bodyTokens = null;
+		EnglishTokenStream titleTokens = null;
 		GetTokenProcessorFactory processorFactory = new GetTokenProcessorFactory();
 		TokenProcessor processor = processorFactory.GetTokenProcessor(processorType);
 
@@ -158,21 +163,54 @@ public class FinalTermDocumentIndexer {
 			}
 
 		} else {
-			// indexing for positional inverted
 			PositionalInvertedIndex docindex = new PositionalInvertedIndex();
 			try {
 				for (Document d : list) {
 					int i = 0;
 					content = d.getContent();
-					tokens = new EnglishTokenStream(content);
-					Iterable<String> token = tokens.getTokens();
+					Gson gson = new Gson();
+					try {
+						// indexing .json file's body and title for positional inverted
+						JsonObject doc = gson.fromJson(content, JsonObject.class);
+						JsonElement bodycontent = doc.get("body");
+						JsonElement titlecontent = doc.get("title");
+						Reader bodyReader = new StringReader(bodycontent.toString());
+						Reader titleReader = new StringReader(titlecontent.toString());
 
-					for (String word : token) {
-						List<String> words = (List<String>) processor.processToken(word);
-						for (String term : words) {
-							docindex.addTerm(term, d.getId(), i);
-							i = i + 1;
+						bodyTokens = new EnglishTokenStream(bodyReader);
+						titleTokens = new EnglishTokenStream(titleReader);
+
+						Iterable<String> bodytoken = bodyTokens.getTokens();
+						Iterable<String> titletoken = titleTokens.getTokens();
+
+						for (String word : bodytoken) {
+							List<String> words = (List<String>) processor.processToken(word);
+							for (String term : words) {
+								docindex.addTerm(term, d.getId(), i);
+								i = i + 1;
+							}
 						}
+						for (String word : titletoken) {
+							List<String> words = (List<String>) processor.processToken(word);
+							for (String term : words) {
+								docindex.addTerm(term, d.getId(), i);
+								i = i + 1;
+							}
+						}
+					} catch (JsonSyntaxException e) {
+						// indexing .txt file content for positional inverted
+						Reader txtReader = d.getContent();
+						EnglishTokenStream txtTokens = new EnglishTokenStream(txtReader);
+						Iterable<String> txtToken = txtTokens.getTokens();
+
+						for (String word : txtToken) {
+							List<String> words = (List<String>) processor.processToken(word);
+							for (String term : words) {
+								docindex.addTerm(term, d.getId(), i);
+								i = i + 1;
+							}
+						}
+						txtReader.close();
 					}
 					content.close();
 				}
@@ -182,7 +220,6 @@ public class FinalTermDocumentIndexer {
 				System.out.println(ex.toString());
 			}
 		}
-
 		return null;
 	}
 
