@@ -50,6 +50,18 @@ public class NearLiteral implements QueryComponent {
 
 		return result;
 	}
+	
+	@Override
+	public List<Posting> getPostings(Index index, String directory) {
+		List<Posting> result = new ArrayList<Posting>();
+
+		List<Posting> firstPosting = index.getPostingsDocandPos(firstTerm, directory);
+		List<Posting> lastPosting = index.getPostingsDocandPos(lastTerm, directory);
+
+		result = tempResult(firstPosting, lastPosting);
+
+		return result;
+	}
 
 	private List<Posting> tempResult(List<Posting> docListOne, List<Posting> docListTwo) {
 		int i = 0;
@@ -62,13 +74,17 @@ public class NearLiteral implements QueryComponent {
 
 				List<Integer> positionListOne = docListOne.get(i).getmPositionId();
 				List<Integer> positionListTwo = docListTwo.get(j).getmPositionId();
+				List<Integer> tempPosition = new ArrayList<Integer>();
 
 				int a = 0, b = 0;
 				while (a < positionListOne.size() && b < positionListTwo.size()) {
 
 					if (positionListTwo.get(b) == positionListOne.get(a) + distance) {
-						tempResult.add(docListTwo.get(j));
-						break;
+//						tempResult.add(docListTwo.get(j));
+//						break;
+						tempPosition.add(positionListTwo.get(b));
+						a++;
+						b++;
 					} else if (positionListTwo.get(b) > positionListOne.get(a)) {
 						a++;
 					} else if (positionListTwo.get(b) < positionListOne.get(a)) {
@@ -76,9 +92,11 @@ public class NearLiteral implements QueryComponent {
 					} else if (positionListTwo.get(b) == positionListOne.get(a)) {
 						b++;
 					}
-
 				}
-
+				if (tempPosition.size() > 0) {
+					Posting p = new Posting(docListTwo.get(j).getDocumentId(), tempPosition);
+					tempResult.add(p);
+				}
 				i++;
 				j++;
 			} else {
@@ -92,14 +110,11 @@ public class NearLiteral implements QueryComponent {
 				}
 			}
 		}
-
 		return tempResult;
-
 	}
 
 	@Override
 	public String toString() {
 		return "\"" + String.join(" ", firstTerm + " " + lastTerm) + "\"";
 	}
-
 }
