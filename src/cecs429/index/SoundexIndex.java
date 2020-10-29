@@ -47,9 +47,7 @@ public class SoundexIndex implements Index {
 			for (int i = 0; i < docList.size(); i++) {
 				results.add(new Posting(docList.get(i)));
 			}
-
 		}
-
 		return results;
 	}
 
@@ -126,6 +124,18 @@ public class SoundexIndex implements Index {
 			output = output + "0";
 		}
 		return output;
+	}
+
+	@Override
+	public List<Posting> getPostingsDocandPos(String term, String directory) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<Posting> getPostings(String term, String directory) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

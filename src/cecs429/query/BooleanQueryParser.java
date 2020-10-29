@@ -1,6 +1,5 @@
 package cecs429.query;
 
-import cecs429.text.AdvanceTokenProcessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -157,17 +156,17 @@ public class BooleanQueryParser {
 		// Phrase Literal
 		if (subquery.charAt(startIndex) == '\"') {
 			int nextSpace = subquery.indexOf('\"', startIndex + 1);
-			lengthOut = nextSpace - (startIndex + 1);
+			lengthOut = nextSpace + (startIndex + 1);
 			return new Literal(new StringBounds(startIndex, lengthOut),
-					new PhraseLiteral(subquery.substring(startIndex + 1, (startIndex + 1) + lengthOut)));
+					new PhraseLiteral(subquery.substring(startIndex + 1, (startIndex) + lengthOut - 1)));
 		}
 
 		// Near Literal
 		if (subquery.charAt(startIndex) == '[') {
 			int nextSpace = subquery.indexOf(']', startIndex + 1);
-			lengthOut = nextSpace - (startIndex + 1);
+			lengthOut = nextSpace + (startIndex + 1);
 
-			String tempvar = subquery.substring(startIndex + 1, (startIndex + 1) + lengthOut);
+			String tempvar = subquery.substring(startIndex + 1, (startIndex) + lengthOut - 1);
 			
 			List<String> termList = Arrays.asList(tempvar.split(" "));
 			String firstTerm = termList.get(0);

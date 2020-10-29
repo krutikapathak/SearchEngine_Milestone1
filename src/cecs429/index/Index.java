@@ -13,6 +13,16 @@ public interface Index {
 	List<Posting> getPostings(String term);
 	
 	/**
+	 * Retrieves a list of docIds that contain the given term.
+	 */
+	List<Posting> getPostings(String term, String directory);
+	
+	/**
+	 * Retrieves a list of Postings of documents and positions that contain the given term.
+	 */
+	List<Posting> getPostingsDocandPos(String term, String directory);
+	
+	/**
 	 * A (sorted) list of all terms in the index vocabulary.
 	 */
 	List<String> getVocabulary();

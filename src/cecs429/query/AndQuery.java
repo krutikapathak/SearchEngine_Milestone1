@@ -28,10 +28,34 @@ public class AndQuery implements QueryComponent {
 
 		// program the merge for an AndQuery, by gathering the postings of the
 		// composed QueryComponents and
-		
 
 		for (QueryComponent q : mChildren) {
 			tempList.add(q.getPostings(index));
+		}
+
+		List<Posting> tempResult = tempList.get(0);
+		int i = 1;
+		do {
+			// Adding the final intersected list to the Result
+			result.clear();
+			result = tempResult(tempResult, tempList.get(i));
+			i++;
+			tempResult.clear();
+			tempResult.addAll(result);
+		} while (i < tempList.size());
+		return result;
+	}
+
+	@Override
+	public List<Posting> getPostings(Index index, String directory) {
+		List<Posting> result = new ArrayList<Posting>();
+		List<List<Posting>> tempList = new ArrayList<>();
+
+		// program the merge for an AndQuery, by gathering the postings of the
+		// composed QueryComponents and
+
+		for (QueryComponent q : mChildren) {
+			tempList.add(q.getPostings(index, directory));
 		}
 
 		List<Posting> tempResult = tempList.get(0);

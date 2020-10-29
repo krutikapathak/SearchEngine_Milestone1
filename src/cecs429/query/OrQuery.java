@@ -23,13 +23,40 @@ public class OrQuery implements QueryComponent {
 	}
 
 	@Override
+	public List<Posting> getPostings(Index index, String directory) {
+
+		List<Posting> result = new ArrayList<Posting>();
+		List<List<Posting>> tempList = new ArrayList<>();
+
+		// program the merge for an OrQuery, by gathering the postings of the
+		// composed Query children and
+
+		for (QueryComponent q : mChildren) {
+			tempList.add(q.getPostings(index, directory));
+		}
+
+		List<Posting> tempResult = tempList.get(0);
+		int i = 1;
+		do {
+			// Adding the final union list to the Result
+			result.clear();
+			result = tempResult(tempResult, tempList.get(i));
+			i++;
+			tempResult.clear();
+			tempResult.addAll(result);
+		} while (i < tempList.size());
+
+		return result;
+
+	}
+
+	@Override
 	public List<Posting> getPostings(Index index) {
 		List<Posting> result = new ArrayList<Posting>();
 		List<List<Posting>> tempList = new ArrayList<>();
 
 		// program the merge for an OrQuery, by gathering the postings of the
 		// composed Query children and
-		
 
 		for (QueryComponent q : mChildren) {
 			tempList.add(q.getPostings(index));
@@ -73,13 +100,13 @@ public class OrQuery implements QueryComponent {
 				}
 			}
 		}
-		while(i < first.size()) {
+		while (i < first.size()) {
 			tempResult.add(first.get(i));
 			i++;
-		} 
-		while(j < second.size()) {
+		}
+		while (j < second.size()) {
 			tempResult.add(second.get(j));
-			j++;	
+			j++;
 		}
 		return tempResult;
 	}

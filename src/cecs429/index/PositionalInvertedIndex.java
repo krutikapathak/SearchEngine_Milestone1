@@ -31,7 +31,7 @@ public class PositionalInvertedIndex implements Index {
 			refinedVocab.put(term, new_docList);
 		} else {
 			int lastIndex = docList.size() - 1;
-				// add if docID is not already in list
+			// add if docID is not already in list
 			Posting existingPosting = docList.get(lastIndex);
 			if (existingPosting.getDocumentId() == documentId) {
 				List<Integer> latestPos = existingPosting.getmPositionId();
@@ -52,7 +52,7 @@ public class PositionalInvertedIndex implements Index {
 
 	@Override
 	public List<Posting> getPostings(String term) {
-		//Process query and fetch the postings
+		// Process query and fetch the postings
 		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
 		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
 		term = AdvanceTokenProcessor.stemWord(processedmTerm);
@@ -71,5 +71,15 @@ public class PositionalInvertedIndex implements Index {
 		ArrayList<String> sortedVocab = new ArrayList<String>(refinedVocab.keySet());
 		Collections.sort(sortedVocab);
 		return Collections.unmodifiableList(sortedVocab);
+	}
+
+	@Override
+	public List<Posting> getPostingsDocandPos(String term, String directory) {
+		return null;
+	}
+
+	@Override
+	public List<Posting> getPostings(String term, String directory) {
+		return null;
 	}
 }

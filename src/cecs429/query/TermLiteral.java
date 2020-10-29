@@ -11,11 +11,11 @@ import java.util.List;
  */
 public class TermLiteral implements QueryComponent {
 	private String mTerm;
-	
+
 	public TermLiteral(String term) {
 		mTerm = term;
 	}
-	
+
 	public String getTerm() {
 		return mTerm;
 	}
@@ -24,7 +24,12 @@ public class TermLiteral implements QueryComponent {
 	public List<Posting> getPostings(Index index) {
 		return index.getPostings(mTerm);
 	}
-	
+
+	@Override
+	public List<Posting> getPostings(Index index, String directory) {
+		return index.getPostings(mTerm, directory);
+	}
+
 	@Override
 	public String toString() {
 		return mTerm;
