@@ -15,11 +15,12 @@ import java.util.List;
 
 public class DiskIndexWriter {
 
-	public HashMap<String, Integer> writeIndex(Index index, String absolutePath) throws FileNotFoundException {
+	public HashMap<String, Integer> writeIndex(Index index,List<Double> weights, String absolutePath) throws FileNotFoundException {
 		HashMap<String, Integer> result = new HashMap<>();
 		Integer bytePos = null;
 		String term;
 		DataOutputStream dataOut = new DataOutputStream(new FileOutputStream(absolutePath + "/postings.bin"));
+                DataOutputStream weightsOut = new DataOutputStream(new FileOutputStream(absolutePath + "/docWeights.bin"));
 		try {
 			List<String> vocab = index.getVocabulary();
 
@@ -62,6 +63,11 @@ public class DiskIndexWriter {
 				}
 				result.put(term, bytePos);
 			}
+                        
+                        for (int w = 0; w < weights.size(); w++) {
+                            weightsOut.writeDouble(weights.get(w));
+                        }
+                        
 			dataOut.close();
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -29,16 +29,21 @@ import cecs429.index.Posting;
 import cecs429.index.SoundexIndex;
 import cecs429.query.BooleanQueryParser;
 import cecs429.query.QueryComponent;
+import cecs429.query.RankedQuery;
 import cecs429.text.AdvanceTokenProcessor;
 import cecs429.text.EnglishTokenStream;
 import cecs429.text.GetTokenProcessorFactory;
 import cecs429.text.TokenProcessor;
+import static java.lang.Math.sqrt;
+import java.util.ArrayList;
 
 public class FinalTermDocumentIndexer {
+    
+         public static List<Double> weights = new ArrayList<>();
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "password";
+	private static final String password = "root";
 
 	public static void main(String[] args) throws FileNotFoundException {
 
@@ -48,10 +53,8 @@ public class FinalTermDocumentIndexer {
 
 		System.out.println("Enter a directory/corpus to index");
 		String dir = sc.nextLine();
-		String soundexDir = "mlb-articles-4000";
-		// /Users/krutikapathak/eclipse-workspace/SEHomework4/chapters
-//		/Users/krutikapathak/eclipse-workspace/Milestone1/test1
-
+		String soundexDir = "C:/Users/15625/Documents/NetBeansProjects/SearchEngine_Milestone1/mlb-articles-4000";
+		
 		File indexDir = new File(dir + "/index");
 		indexDir.mkdirs();
 
@@ -74,9 +77,22 @@ public class FinalTermDocumentIndexer {
 		System.out.println("Indexing time: " + timeTaken);
 		
 		insertToDB(indexDir, diskIndex, index, biwordIndex);
+                
+                System.out.println("Enter a query mode");
+                System.out.println("1.Boolean Query");
+                System.out.println("2.Ranked Query");
+		String mode = sc.nextLine();
+                
+                if("1".equals(mode)){
+                    System.out.println("You have selected boolean Query mode");
+                }else {
+                    System.out.println("You have selected Ranked Query mode");
+                }
 
 		String query = "";
 		String[] splittedString;
+                
+               
 		System.out.println("Enter a word to search");
 		query = sc.nextLine();
 
@@ -85,6 +101,7 @@ public class FinalTermDocumentIndexer {
 			BiWordIndex bwIndex = new BiWordIndex();
 			BooleanQueryParser bqp = new BooleanQueryParser();
 			QueryComponent qc = bqp.parseQuery(query);
+                        
 			// Special Queries
 			if (query.startsWith(":")) {
 				splittedString = query.split(" ");
@@ -135,14 +152,23 @@ public class FinalTermDocumentIndexer {
 					}
 				}
 				}
-			} else {
+			} else if("1".equals(mode)){
 				List<Posting> result = qc.getPostings(docIndex, dir);
 //				List<Posting> result = qc.getPostings(index);
 				for (Posting p : result) {
 					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
 				}
 				System.out.println("Word found in " + result.size() + " documents!!");
-			}
+			}else{
+                          
+                            RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize());
+                            List<Posting> result = rq.getPostings(docIndex, dir);
+                            for (Posting p : result) {
+				System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
+                                System.out.println("accumulator: " + p.getAccumulator());
+                                System.out.println("==================");
+                            }
+                        }
 			System.out.println("Enter a word to search");
 			query = sc.nextLine();
 		}
@@ -151,7 +177,7 @@ public class FinalTermDocumentIndexer {
 
 	private static void insertToDB(File indexDir, DiskIndexWriter diskIndex, Index index, Index biwordIndex)
 			throws FileNotFoundException {
-		HashMap<String, Integer> bytePositionsList = diskIndex.writeIndex(index, indexDir.getAbsolutePath());
+		HashMap<String, Integer> bytePositionsList = diskIndex.writeIndex(index, weights, indexDir.getAbsolutePath());
 		HashMap<String, Integer> BiwordBytePosList = diskIndex.writeBiwordIndex(biwordIndex,
 				indexDir.getAbsolutePath());
 
@@ -173,14 +199,14 @@ public class FinalTermDocumentIndexer {
 
 			for (String entry : bytePositionsList.keySet()) {
 				Integer byteLoc = bytePositionsList.get(entry);
-				System.out.println("Key: " + entry + ", Value: " + byteLoc);
+				//System.out.println("Key: " + entry + ", Value: " + byteLoc);
 				preparedStatement.setString(1, entry);
 				preparedStatement.setInt(2, byteLoc);
 				preparedStatement.execute();
 			}
 			for (String entry : BiwordBytePosList.keySet()) {
 				Integer byteLoc = BiwordBytePosList.get(entry);
-				System.out.println("Key: " + entry + ", Value: " + byteLoc);
+				//System.out.println("Key: " + entry + ", Value: " + byteLoc);
 				preparedStatement.setString(1, entry);
 				preparedStatement.setInt(2, byteLoc);
 				preparedStatement.execute();
@@ -234,6 +260,8 @@ public class FinalTermDocumentIndexer {
 			try {
 				for (Document d : list) {
 					int i = 0;
+                                        
+                                        HashMap<String, Integer> weightDoc = new HashMap<>();
 					content = d.getContent();
 					Gson gson = new Gson();
 					try {
@@ -253,15 +281,29 @@ public class FinalTermDocumentIndexer {
 						for (String word : bodytoken) {
 							List<String> words = (List<String>) processor.processToken(word);
 							for (String term : words) {
-								docindex.addTerm(term, d.getId(), i);
-								i = i + 1;
+                                                            Integer tf = weightDoc.get(term);
+                                                            if (tf == null) {
+                                                                 weightDoc.put(term,1);
+                                                            } else {
+                                                                   ++tf;
+                                                                 weightDoc.put(term,tf);
+                                                            }
+                                                            docindex.addTerm(term, d.getId(), i);
+                                                            i = i + 1;
 							}
 						}
 						for (String word : titletoken) {
 							List<String> words = (List<String>) processor.processToken(word);
 							for (String term : words) {
-								docindex.addTerm(term, d.getId(), i);
-								i = i + 1;
+                                                            Integer tf = weightDoc.get(term);
+                                                            if (tf == null) {
+                                                                 weightDoc.put(term,1);
+                                                            } else {
+                                                                   ++tf;
+                                                                 weightDoc.put(term,tf);
+                                                            }
+                                                            docindex.addTerm(term, d.getId(), i);
+                                                            i = i + 1;
 							}
 						}
 					} catch (JsonSyntaxException e) {
@@ -273,13 +315,21 @@ public class FinalTermDocumentIndexer {
 						for (String word : txtToken) {
 							List<String> words = (List<String>) processor.processToken(word);
 							for (String term : words) {
-								docindex.addTerm(term, d.getId(), i);
-								i = i + 1;
+                                                            Integer tf = weightDoc.get(term);
+                                                            if (tf == null) {
+                                                                 weightDoc.put(term,1);
+                                                            } else {
+                                                                   ++tf;
+                                                                 weightDoc.put(term,tf);
+                                                            }
+                                                            docindex.addTerm(term, d.getId(), i);
+                                                            i = i + 1;
 							}
 						}
 						txtReader.close();
 					}
 					content.close();
+                                        calculateDocWeight(weightDoc, d.getId());
 				}
 				return docindex;
 			} catch (Exception ex) {
@@ -348,7 +398,7 @@ public class FinalTermDocumentIndexer {
 		for (String word : tokens) {
 			List<String> words = (List<String>) processor.processToken(word);
 			for (String term : words) {
-				if (term.isBlank())
+				if (term.isEmpty())
 					continue;
 				if (firstWord == null && secondWord == null) {
 					firstWord = term;
@@ -358,7 +408,7 @@ public class FinalTermDocumentIndexer {
 					secondWord = term;
 				}
 				term = (firstWord + " " + secondWord);
-				System.out.println("Body: " + term);
+				//System.out.println("Body: " + term);
 				biwordIndex.addBiwordTerm(term, doc.getId());
 				firstWord = secondWord;
 				secondWord = null;
@@ -370,4 +420,27 @@ public class FinalTermDocumentIndexer {
 		String fileName = new File(directory).listFiles()[0].getName();
 		return fileName.substring(fileName.lastIndexOf('.'));
 	}
+        
+        
+        public static void processBooleanQuery(){
+            
+        }
+        
+        public static void processRankedQuery(){
+            
+        }
+        
+         public static void calculateDocWeight(HashMap<String, Integer> map, Integer docID) {
+            
+            double weightSummation = 0;
+            
+            for (Integer value : map.values()) {
+                double wdt = 1 + Math.log(value);
+                weightSummation += (wdt * wdt);
+            }
+            
+            double docLd = sqrt(weightSummation); 
+            System.out.println(docID + ":" + docLd);
+            weights.add(docLd);
+        }
 }
