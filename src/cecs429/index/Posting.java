@@ -7,6 +7,7 @@ import java.util.List;
  */
 public class Posting {
 	private int mDocumentId;
+        private double mAccumulator;
 	private List<Integer> mPositionId;
 
 	public Posting(int documentId) {
@@ -17,6 +18,12 @@ public class Posting {
 		mDocumentId = documentId;
 		mPositionId = positionId;
 	}
+        
+        public Posting(int documentId, double accumulator) {
+		mDocumentId = documentId;
+		mAccumulator = accumulator;
+	}
+
 
 	public int getDocumentId() {
 		return mDocumentId;
@@ -29,5 +36,9 @@ public class Posting {
 	public void setmPositionId(List<Integer> positionId) {
 		mPositionId = positionId;
 	}
+        
+        public double getAccumulator(){
+            return mAccumulator;
+        }
 
 }

@@ -23,12 +23,12 @@ public class DiskPositionalIndex implements Index {
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "password";
+	private static final String password = "root";
 
 	public DiskPositionalIndex() {
 
 	}
-	
+        
 	public int seekByteLoc(String term, DataInputStream din) {
 		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
 		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
