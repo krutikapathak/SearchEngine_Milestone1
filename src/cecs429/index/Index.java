@@ -26,4 +26,9 @@ public interface Index {
 	 * A (sorted) list of all terms in the index vocabulary.
 	 */
 	List<String> getVocabulary();
+	
+	/**
+	 * A (sorted) list of all terms in the Biword index vocabulary.
+	 */
+	List<String> getBiwordVocabulary();
 }

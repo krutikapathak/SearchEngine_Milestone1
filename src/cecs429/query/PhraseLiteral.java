@@ -61,17 +61,20 @@ public class PhraseLiteral implements QueryComponent {
 				String term = mTerms.get(0) + " " + mTerms.get(1);
 				int totalDocs = disk.seekByteLoc(term, din);
 				int i = 0;
-				do {
-					int docIdGap = din.readInt();
-					int prevDocId = 0;
-					if (result.size() > 0) {
-						prevDocId = result.get(i - 1).getDocumentId();
-					}
-					int docId = docIdGap + prevDocId;
-					Posting p = new Posting(docId);
-					result.add(p);
-					i++;
-				} while (i < totalDocs);
+				if (totalDocs != 0) {
+					do {
+						int docIdGap = din.readInt();
+						int prevDocId = 0;
+						if (result.size() > 0) {
+							prevDocId = result.get(i - 1).getDocumentId();
+						}
+						int docId = docIdGap + prevDocId;
+						Posting p = new Posting(docId);
+						result.add(p);
+						i++;
+					} while (i < totalDocs);
+				}
+				din.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

@@ -5,8 +5,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import cecs429.text.AdvanceTokenProcessor;
-
 /**
  * 
  * @author Krutika Pathak
@@ -14,9 +12,11 @@ import cecs429.text.AdvanceTokenProcessor;
  */
 public class PositionalInvertedIndex implements Index {
 	private final HashMap<String, List<Posting>> refinedVocab;
+	private HashMap<String, List<Integer>> biwordVocab;
 
 	public PositionalInvertedIndex() {
 		refinedVocab = new HashMap<>();
+		biwordVocab = new HashMap<>();
 	}
 
 	public void addTerm(String term, int documentId, int position) {
@@ -49,13 +49,38 @@ public class PositionalInvertedIndex implements Index {
 			}
 		}
 	}
+	
+	public void addBiwordTerm(String term, int documentId) {
+		List<Integer> docList = biwordVocab.get(term);
+
+		// if list does not exist create it
+		if (docList == null) {
+			List<Integer> new_docList = new ArrayList<>();
+			new_docList.add(documentId);
+			biwordVocab.put(term, new_docList);
+		} else {
+			// add if docID is not already in list
+			if (docList.get(docList.size() - 1) < documentId) {
+				docList.add(documentId);
+				biwordVocab.replace(term, docList);
+			}
+		}
+	}
+
+	public List<Posting> getBiwordPostings(String term) {
+		List<Posting> result = new ArrayList<>();
+		List<Integer> docList = biwordVocab.get(term);
+		if (docList != null) {
+			for (int i = 0; i < docList.size(); i++) {
+				result.add(new Posting(docList.get(i)));
+			}
+		}
+		return result;
+	}
 
 	@Override
 	public List<Posting> getPostings(String term) {
 		// Process query and fetch the postings
-		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
-		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-		term = AdvanceTokenProcessor.stemWord(processedmTerm);
 		List<Posting> result = new ArrayList<>();
 		List<Posting> docList = refinedVocab.get(term);
 		if (docList != null) {
@@ -64,6 +89,13 @@ public class PositionalInvertedIndex implements Index {
 			}
 		}
 		return result;
+	}
+	
+	@Override
+	public List<String> getBiwordVocabulary() {
+		ArrayList<String> sortedBiwordVocab = new ArrayList<String>(biwordVocab.keySet());
+		Collections.sort(sortedBiwordVocab);
+		return Collections.unmodifiableList(sortedBiwordVocab);
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package cecs429.text;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import cecs429.snowball.SnowballStemmer;
 
@@ -14,24 +15,35 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 
 	@Override
 	public List<String> processToken(String token) {
-		List<String> Stringtokens = new ArrayList<>();
-		// Removing non-alphanumeric, ' and " characters
-		String alphanumeric_string = removenonAlphanumeric(token);
-		String processed = alphanumeric_string.replaceAll("\'", "").replaceAll("\"", "");
-
-		//splitting hyphened words and stemming 
-		if (token.contains("-")) {
-			String[] splitToken = processed.split("-");
-			String combinedtoken = processed.replaceAll("-", "").replaceAll(" ", "");
-			for (int i = 0; i < splitToken.length; i++) {
-				Stringtokens.add(stemWord(splitToken[i]));
+		List<String> stringTokens = new ArrayList<>();
+		List<String> splitTokens = new ArrayList<>();
+		// splitting hyphenated words and stemming
+		token = removeHyphens(token);
+		splitTokens = Arrays.asList(token.split(" "));
+		for (String split : splitTokens) {
+			if (split.contains("-")) {
+				String[] splitToken = split.split("-");
+				for (int i = 0; i < splitToken.length; i++) {
+					stringTokens.add(processTerm(splitToken[i]));
+				}
+				if (splitToken.length == 0)
+					continue;
+				String combinedtoken = splitToken[0];
+				for (int i = 1; i < splitToken.length; i++) {
+					combinedtoken = combinedtoken + splitToken[i];
+				}
+				stringTokens.add(processTerm(combinedtoken));
+			} else {
+				// stemming normal tokens(without hyphens)
+				stringTokens.add(processTerm(split));
 			}
-			Stringtokens.add(stemWord(combinedtoken));
-		} else {
-			//stemming normal tokens(without hyphens)
-			Stringtokens.add(stemWord(processed));
 		}
-		return Stringtokens;
+		return stringTokens;
+	}
+
+	private String removeHyphens(String token) {
+		token = token.replace("—", "-").replace("–", "-").replace(" ", " ");
+		return token;
 	}
 
 	public static String stemWord(String token) {
@@ -54,7 +66,10 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 	}
 
 	public static String removenonAlphanumeric(String token) {
-		//remove the non-alphanumeric characters from beginning and end
+		// remove the non-alphanumeric characters from beginning and end
+		if (token.isBlank()) {
+			return "";
+		}
 		for (int i = 0; i < token.length(); i++) {
 			for (int j = (token.length()) - 1; j > 0; j--) {
 
@@ -65,6 +80,31 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 				}
 			}
 		}
-		return "";
+		return Character.isLetterOrDigit(token.charAt(0)) ? token.substring(0, 1) : "";
+	}
+
+	public static String processTerm(String query) {
+		List<String> mTerms = new ArrayList<>();
+		if (query.contains(" ")) {
+			List<String> termList = Arrays.asList(query.split(" "));
+			for (String term : termList) {
+				if (term.isBlank())
+					continue;
+				mTerms.add(termProcessor(term));
+			}
+			if (mTerms.size() == 2) {
+				query = mTerms.get(0) + " " + mTerms.get(1);
+			}
+		} else {
+			query = termProcessor(query);
+		}
+		return query;
+	}
+
+	private static String termProcessor(String query) {
+		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(query);
+		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
+		query = AdvanceTokenProcessor.stemWord(processedmTerm);
+		return query;
 	}
 }
