@@ -227,34 +227,35 @@ public class FinalTermDocumentIndexer {
 		Reader content;
 		Iterable<Document> list = corpus.getDocuments();
 
-		if (processorType == "soundex") {
-			// indexing for soundex
-			SoundexIndex docindex = new SoundexIndex();
-
-			try {
-				for (Document d : list) {
-
-					content = d.getContent();
-					Gson gson = new Gson();
-					JsonObject doc = gson.fromJson(content, JsonObject.class);
-
-					String authorName = doc.get("author").getAsString();
-
-					if (!authorName.isEmpty()) {
-						List<String> words = (List<String>) processor.processToken(authorName);
-						for (String word : words) {
-							docindex.addTerm(word, d.getId());
-						}
-					}
-					content.close();
-				}
-				return docindex;
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				System.out.println(ex.toString());
-			}
-
-		} else {
+//		if (processorType == "soundex") {
+//			// indexing for soundex
+//			SoundexIndex docindex = new SoundexIndex();
+//
+//			try {
+//				for (Document d : list) {
+//
+//					content = d.getContent();
+//					Gson gson = new Gson();
+//					JsonObject doc = gson.fromJson(content, JsonObject.class);
+//
+//					String authorName = doc.get("author").getAsString();
+//
+//					if (!authorName.isEmpty()) {
+//						List<String> words = (List<String>) processor.processToken(authorName);
+//						for (String word : words) {
+//							docindex.addTerm(word, d.getId());
+//						}
+//					}
+//					content.close();
+//				}
+//				return docindex;
+//			} catch (Exception ex) {
+//				ex.printStackTrace();
+//				System.out.println(ex.toString());
+//			}
+//
+//		} else 
+{
 			PositionalInvertedIndex docindex = new PositionalInvertedIndex();
 
 			try {
@@ -433,14 +434,22 @@ public class FinalTermDocumentIndexer {
          public static void calculateDocWeight(HashMap<String, Integer> map, Integer docID) {
             
             double weightSummation = 0;
+            double total_tftd = 0;
             
             for (Integer value : map.values()) {
                 double wdt = 1 + Math.log(value);
                 weightSummation += (wdt * wdt);
+                total_tftd += value;
             }
             
             double docLd = sqrt(weightSummation); 
+            double docLength = map.size();
+            double byteSize = 0.12;
+            double avg_tftd = total_tftd/map.size();
             System.out.println(docID + ":" + docLd);
             weights.add(docLd);
+            weights.add(docLength);
+            weights.add(byteSize);
+            weights.add(avg_tftd);
         }
 }

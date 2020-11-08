@@ -120,7 +120,7 @@ public class RankedQuery implements QueryComponent{
             double docWeight = 0;
             try {
                     din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes(docId * 8);
+                    din.skipBytes(docId * (8 *4));
                     docWeight = din.readDouble();
 		} catch (Exception e) {
                     e.printStackTrace();
