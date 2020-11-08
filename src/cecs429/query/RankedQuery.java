@@ -73,7 +73,7 @@ public class RankedQuery implements QueryComponent{
                 
                 double wdt = 1 + Math.log(tftd);
                 
-                acc += (wdt*wqt); 
+                acc = (wdt*wqt); 
                 
                 if(scoreMap.containsKey(docId)){
                     double s = scoreMap.get(docId);
