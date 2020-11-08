@@ -78,7 +78,7 @@ public class RankedQuery implements QueryComponent{
                 if(scoreMap.containsKey(docId)){
                     double s = scoreMap.get(docId);
                     s += acc;
-                    scoreMap.replace(docId, s);
+                    scoreMap.put(docId, s);
                 } else {
                     scoreMap.put(docId, acc);
                 }                
@@ -88,28 +88,27 @@ public class RankedQuery implements QueryComponent{
         //loop over key(docId)
         for( int docId: scoreMap.keySet()){
             double accumulator = scoreMap.get(docId);
-            double ld = getDocWeight(docId, directory);
-            accumulator = accumulator/ld;
-            scoreMap.replace(docId, accumulator);
+            if(accumulator > 0){
+                double ld = getDocWeight(docId, directory);
+                accumulator = accumulator/ld;
+                scoreMap.replace(docId, accumulator);
+            }           
         }
         
         
         PriorityQueue<Map.Entry<Integer, Double>> pq = new PriorityQueue<>((Map.Entry<Integer, Double> x, Map.Entry<Integer, Double> y) -> Double.compare(y.getValue(), x.getValue()));
             
-
-        //maintain a heap of size k.
         for (Map.Entry<Integer, Double> entry : scoreMap.entrySet()) {
             pq.offer(entry);
-            if (pq.size() > k) {
-                pq.poll();
-            }
         }
         
-        //get all elements from the heap
-        while (pq.size() > 0) {
+        //get top 10 elements from the heap
+        int i = 0 ;
+        while (pq.size() > 0 && i < 10) {
             Entry<Integer, Double> entry = pq.poll();
             Posting p = new Posting(entry.getKey(),entry.getValue());
             result.add(p);
+            i++;
         }
                 
         return result;
@@ -121,7 +120,6 @@ public class RankedQuery implements QueryComponent{
             double docWeight = 0;
             try {
                     din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    int i = 0;
                     din.skipBytes(docId * 8);
                     docWeight = din.readDouble();
 		} catch (Exception e) {

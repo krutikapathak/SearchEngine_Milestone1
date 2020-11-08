@@ -191,7 +191,7 @@ public class FinalTermDocumentIndexer {
 			preparedStatement.execute();
 
 			preparedStatement = conn.prepareStatement("CREATE TABLE Milestone2.positions ("
-					+ "  id INT NOT NULL AUTO_INCREMENT," + "  Term VARCHAR(1500) NOT NULL,"
+					+ "  id INT NOT NULL AUTO_INCREMENT," + "  Term VARCHAR(1500) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NOT NULL,"
 					+ "  BytePosition INT NOT NULL," + "  PRIMARY KEY (id));");
 			preparedStatement.execute();
 
@@ -368,9 +368,9 @@ public class FinalTermDocumentIndexer {
 					Iterable<String> bodytoken = bodyTokens.getTokens();
 					Iterable<String> titletoken = titleTokens.getTokens();
 
-					System.out.println("Body starts");
+					//System.out.println("Body starts");
 					addBiWord(processorType, processorFactory, biwordIndex, d, bodytoken);
-					System.out.println("Title starts");
+					//System.out.println("Title starts");
 					addBiWord(processorType, processorFactory, biwordIndex, d, titletoken);
 				} catch (JsonSyntaxException e) {
 					// indexing .txt file content for positional inverted
