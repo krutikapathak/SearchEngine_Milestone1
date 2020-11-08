@@ -1,6 +1,7 @@
 package cecs429.documents;
 
 import java.io.Reader;
+import java.nio.file.Path;
 
 /**
  * Represents a document in an index.
@@ -20,4 +21,6 @@ public interface Document {
 	 * The title of the document, for displaying to the user.
 	 */
 	String getTitle();
+        
+        Path getFilePath();
 }

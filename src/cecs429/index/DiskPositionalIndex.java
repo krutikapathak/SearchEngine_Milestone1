@@ -28,11 +28,9 @@ public class DiskPositionalIndex implements Index {
 	public DiskPositionalIndex() {
 
 	}
-        
+
 	public int seekByteLoc(String term, DataInputStream din) {
-		String alphanumeric_mterm = AdvanceTokenProcessor.removenonAlphanumeric(term);
-		String processedmTerm = alphanumeric_mterm.replaceAll("\'", "").replaceAll("\"", "");
-		term = AdvanceTokenProcessor.stemWord(processedmTerm);
+		term = AdvanceTokenProcessor.processTerm(term);
 		int number = 0;
 		try {
 			// load the MySQL driver
@@ -41,14 +39,13 @@ public class DiskPositionalIndex implements Index {
 			Connection conn = DriverManager.getConnection(url, user, password);
 			statement = conn.createStatement();
 			resultSet = statement
-					.executeQuery("SELECT Term, BytePosition FROM Milestone2.positions WHERE Term='" + term + "'");
-			Integer diskPos = null;
+					.executeQuery("SELECT Term, BytePosition FROM Milestone2.disk WHERE Term='" + term + "'");
 			while (resultSet.next()) {
 				String diskTerm = resultSet.getString("Term");
-				diskPos = resultSet.getInt("BytePosition");
+				Integer diskPos = resultSet.getInt("BytePosition");
+				din.skipBytes(diskPos);
+				number = din.readInt();
 			}
-			din.skipBytes(diskPos);
-			number = din.readInt();
 			System.out.println(number);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -64,19 +61,22 @@ public class DiskPositionalIndex implements Index {
 			din = new DataInputStream(new FileInputStream(directory + "/index/postings.bin"));
 			int totalDocs = seekByteLoc(term, din);
 			int i = 0;
-			do {
-				int docIdGap = din.readInt();
-				int prevDocId = 0;
-				if (result.size() > 0) {
-					prevDocId = result.get(i - 1).getDocumentId();
-				}
-				int docId = docIdGap + prevDocId;
-				Posting p = new Posting(docId);
-				result.add(p);
-				int freq = din.readInt();
-				din.skipBytes(freq * 4);
-				i++;
-			} while (i < totalDocs);
+			if (totalDocs != 0) {
+				do {
+					int docIdGap = din.readInt();
+					int prevDocId = 0;
+					if (result.size() > 0) {
+						prevDocId = result.get(i - 1).getDocumentId();
+					}
+					int docId = docIdGap + prevDocId;
+					Posting p = new Posting(docId);
+					result.add(p);
+					int freq = din.readInt();
+					din.skipBytes(freq * 4);
+					i++;
+				} while (i < totalDocs);
+			}
+			din.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -91,31 +91,33 @@ public class DiskPositionalIndex implements Index {
 			din = new DataInputStream(new FileInputStream(directory + "/index/postings.bin"));
 			int totalDocs = seekByteLoc(term, din);
 			int i = 0;
-			do {
-				List<Integer> positions = new ArrayList<>();
-				int docIdGap = din.readInt();
-				int prevDocId = 0;
-				if (result.size() > 0) {
-					prevDocId = result.get(i - 1).getDocumentId();
-				}
-				int docId = docIdGap + prevDocId;
-				int freq = din.readInt();
-				int prevPosId = 0;
-				int j = 0;
-				while (j < freq) {
-					int posGap = din.readInt();
-					int position = posGap + prevPosId;
-					positions.add(position);
-					if (positions.size() > 0) {
-						prevPosId = positions.get(positions.size() - 1);
+			if (totalDocs != 0) {
+				do {
+					List<Integer> positions = new ArrayList<>();
+					int docIdGap = din.readInt();
+					int prevDocId = 0;
+					if (result.size() > 0) {
+						prevDocId = result.get(i - 1).getDocumentId();
 					}
-					j++;
-				}
-				System.out.println(docId + "<" + positions + ">");
-				Posting p = new Posting(docId, positions);
-				result.add(p);
-				i++;
-			} while (i < totalDocs);
+					int docId = docIdGap + prevDocId;
+					int freq = din.readInt();
+					int prevPosId = 0;
+					int j = 0;
+					while (j < freq) {
+						int posGap = din.readInt();
+						int position = posGap + prevPosId;
+						positions.add(position);
+						if (positions.size() > 0) {
+							prevPosId = positions.get(positions.size() - 1);
+						}
+						j++;
+					}
+					Posting p = new Posting(docId, positions);
+					result.add(p);
+					i++;
+				} while (i < totalDocs);
+			}
+			din.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -129,6 +131,11 @@ public class DiskPositionalIndex implements Index {
 
 	@Override
 	public List<String> getVocabulary() {
+		return null;
+	}
+
+	@Override
+	public List<String> getBiwordVocabulary() {
 		return null;
 	}
 }
