@@ -23,7 +23,7 @@ public class DiskPositionalIndex implements Index {
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "password";
+	private static final String password = "root";
 
 	public DiskPositionalIndex() {
 

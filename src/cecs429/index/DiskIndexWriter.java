@@ -1,6 +1,8 @@
 package cecs429.index;
 
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -139,5 +141,70 @@ public class DiskIndexWriter {
 			return ((PositionalInvertedIndex) Index).getBiwordPostings(term);
 		else
 			return Index.getPostings(term);
+	}
+        
+        public double getDocWeight(int docId, String directory){
+            DataInputStream din;
+            double docWeight = 0;
+            try {
+                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+                    din.skipBytes(docId * (8 *4));
+                    docWeight = din.readDouble();
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+            return docWeight;
+	}
+        
+        public double getdocLength(int docId, String directory){
+            DataInputStream din;
+            double docWeight = 0;
+            try {
+                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+                    din.skipBytes((docId * (8 *4)) + 8);
+                    docWeight = din.readDouble();
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+            return docWeight;
+	}
+               
+        public double getbyteSize(int docId, String directory){
+            DataInputStream din;
+            double docWeight = 0;
+            try {
+                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+                    din.skipBytes((docId * (8 *4)) + 16);
+                    docWeight = din.readDouble();
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+            return docWeight;
+	}
+        
+        public double getavgtftd(int docId, String directory){
+            DataInputStream din;
+            double docWeight = 0;
+            try {
+                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+                    din.skipBytes((docId * (8 *4)) + 24);
+                    docWeight = din.readDouble();
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+            return docWeight;
+	}
+        
+        public double getdocLengthA(int corpusSize, String directory){
+            DataInputStream din;
+            double docWeight = 0;
+            try {
+                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+                    din.skipBytes((corpusSize * (8 *4)) + 16);
+                    docWeight = din.readDouble();
+		} catch (Exception e) {
+                    e.printStackTrace();
+		}
+            return docWeight;
 	}
 }

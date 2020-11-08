@@ -67,7 +67,7 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 
 	public static String removenonAlphanumeric(String token) {
 		// remove the non-alphanumeric characters from beginning and end
-		if (token.isBlank()) {
+		if (token.isEmpty()) {
 			return "";
 		}
 		for (int i = 0; i < token.length(); i++) {
@@ -88,7 +88,7 @@ public class AdvanceTokenProcessor implements TokenProcessor {
 		if (query.contains(" ")) {
 			List<String> termList = Arrays.asList(query.split(" "));
 			for (String term : termList) {
-				if (term.isBlank())
+				if (term.isEmpty())
 					continue;
 				mTerms.add(termProcessor(term));
 			}
