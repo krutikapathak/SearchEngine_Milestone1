@@ -142,69 +142,74 @@ public class DiskIndexWriter {
 		else
 			return Index.getPostings(term);
 	}
-        
-        public double getDocWeight(int docId, String directory){
-            DataInputStream din;
-            double docWeight = 0;
-            try {
-                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes(docId * (8 *4));
-                    docWeight = din.readDouble();
+
+	public double getDocWeight(int docId, String directory) {
+		DataInputStream din;
+		double docWeight = 0;
+		try {
+			din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+			din.skipBytes(docId * (8 * 4));
+			docWeight = din.readDouble();
+			din.close();
 		} catch (Exception e) {
-                    e.printStackTrace();
+			e.printStackTrace();
 		}
-            return docWeight;
+		return docWeight;
 	}
-        
-        public double getdocLength(int docId, String directory){
-            DataInputStream din;
-            double docWeight = 0;
-            try {
-                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes((docId * (8 *4)) + 8);
-                    docWeight = din.readDouble();
+
+	public double getdocLength(int docId, String directory) {
+		DataInputStream din;
+		double docWeight = 0;
+		try {
+			din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+			din.skipBytes((docId * (8 * 4)) + 8);
+			docWeight = din.readDouble();
+			din.close();
 		} catch (Exception e) {
-                    e.printStackTrace();
+			e.printStackTrace();
 		}
-            return docWeight;
+		return docWeight;
 	}
-               
-        public double getbyteSize(int docId, String directory){
-            DataInputStream din;
-            double docWeight = 0;
-            try {
-                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes((docId * (8 *4)) + 16);
-                    docWeight = din.readDouble();
+
+	public double getbyteSize(int docId, String directory) {
+		DataInputStream din;
+		double docWeight = 0;
+		try {
+			din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+			din.skipBytes((docId * (8 * 4)) + 16);
+			docWeight = din.readDouble();
+			din.close();
 		} catch (Exception e) {
-                    e.printStackTrace();
+			e.printStackTrace();
 		}
-            return docWeight;
+		return docWeight;
 	}
-        
-        public double getavgtftd(int docId, String directory){
-            DataInputStream din;
-            double docWeight = 0;
-            try {
-                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes((docId * (8 *4)) + 24);
-                    docWeight = din.readDouble();
+
+	public double getavgtftd(int docId, String directory) {
+		DataInputStream din;
+		double docWeight = 0;
+		try {
+			din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+			din.skipBytes((docId * (8 * 4)) + 24);
+			docWeight = din.readDouble();
+			din.close();
 		} catch (Exception e) {
-                    e.printStackTrace();
+			e.printStackTrace();
 		}
-            return docWeight;
+		return docWeight;
 	}
-        
-        public double getdocLengthA(int corpusSize, String directory){
-            DataInputStream din;
-            double docWeight = 0;
-            try {
-                    din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
-                    din.skipBytes((corpusSize * (8 *4)) + 16);
-                    docWeight = din.readDouble();
+
+	public double getdocLengthA(int corpusSize, String directory) {
+		DataInputStream din;
+		double docWeight = 0;
+		try {
+			din = new DataInputStream(new FileInputStream(directory + "/index/docWeights.bin"));
+			din.skipBytes((corpusSize * 8 * 4));
+			docWeight = din.readDouble();
+			din.close();
 		} catch (Exception e) {
-                    e.printStackTrace();
+			e.printStackTrace();
 		}
-            return docWeight;
+		return docWeight;
 	}
 }

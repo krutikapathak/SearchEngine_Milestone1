@@ -27,7 +27,7 @@ public class SoundexIndex implements Index {
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "root";
+	private static final String password = "password";
 
 	private HashMap<String, List<Integer>> soundexMap;
 
