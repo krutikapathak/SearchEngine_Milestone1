@@ -54,7 +54,7 @@ public class FinalTermDocumentIndexer {
 
 		System.out.println("Enter a directory/corpus to index");
 		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/Milestone1/articles";
-		String soundexDir = "mlb-articles-4000";
+		String soundexDir = "C:/Users/15625/Documents/NetBeansProjects/SearchEngine_Milestone1/mlb-articles-4000";
 
 		File indexDir = new File(dir + "/index");
 		indexDir.mkdirs();
@@ -257,35 +257,36 @@ public class FinalTermDocumentIndexer {
 		Reader content;
                 int totalCorpusToken = 0;
 		Iterable<Document> list = corpus.getDocuments();
-
-		if (processorType == "soundex") {
-			// indexing for soundex
-			SoundexIndex docindex = new SoundexIndex();
-
-			try {
-				for (Document d : list) {
-
-					content = d.getContent();
-					Gson gson = new Gson();
-					JsonObject doc = gson.fromJson(content, JsonObject.class);
-
-					String authorName = doc.get("author").getAsString();
-
-					if (!authorName.isEmpty()) {
-						List<String> words = (List<String>) processor.processToken(authorName);
-						for (String word : words) {
-							docindex.addTerm(word, d.getId());
-						}
-					}
-					content.close();
-				}
-				return docindex;
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				System.out.println(ex.toString());
-			}
-
-		} else {
+//
+//		if (processorType == "soundex") {
+//			// indexing for soundex
+//			SoundexIndex docindex = new SoundexIndex();
+//
+//			try {
+//				for (Document d : list) {
+//
+//					content = d.getContent();
+//					Gson gson = new Gson();
+//					JsonObject doc = gson.fromJson(content, JsonObject.class);
+//
+//					String authorName = doc.get("author").getAsString();
+//
+//					if (!authorName.isEmpty()) {
+//						List<String> words = (List<String>) processor.processToken(authorName);
+//						for (String word : words) {
+//							docindex.addTerm(word, d.getId());
+//						}
+//					}
+//					content.close();
+//				}
+//				return docindex;
+//			} catch (Exception ex) {
+//				ex.printStackTrace();
+//				System.out.println(ex.toString());
+//			}
+//
+//		} else 
+{
 			PositionalInvertedIndex docindex = new PositionalInvertedIndex();
 
 			try {
@@ -312,9 +313,6 @@ public class FinalTermDocumentIndexer {
 
 						Iterable<String> bodytoken = bodyTokens.getTokens();
 						Iterable<String> titletoken = titleTokens.getTokens();
-                                                tokenCount = (int) bodytoken.spliterator().getExactSizeIfKnown();
-                                                tokenCount += (int) titletoken.spliterator().getExactSizeIfKnown();
-                                                totalCorpusToken += tokenCount;
 
 						positionId = createIndex(processor, docindex, d, bodytoken, positionId, weightDoc);
 						positionId = createIndex(processor, docindex, d, titletoken, positionId, weightDoc);
@@ -323,14 +321,12 @@ public class FinalTermDocumentIndexer {
 						Reader txtReader = d.getContent();
 						EnglishTokenStream txtTokens = new EnglishTokenStream(txtReader);
 						Iterable<String> txtToken = txtTokens.getTokens();
-                                                tokenCount = (int) txtToken.spliterator().getExactSizeIfKnown();
-                                                totalCorpusToken += tokenCount;
-
+                                               
 						positionId = createIndex(processor, docindex, d, txtToken, positionId, weightDoc);
 						txtReader.close();
 					}
 					content.close();
-					calculateDocWeight(weightDoc, d.getId(),tokenCount,byteSize);
+					totalCorpusToken +=calculateDocWeight(weightDoc, d.getId(),tokenCount,byteSize);
 				}
                                 weights.add((double)totalCorpusToken);
 				return docindex;
@@ -388,7 +384,7 @@ public class FinalTermDocumentIndexer {
 		return fileName.substring(fileName.lastIndexOf('.'));
 	}
         
-         public static void calculateDocWeight(HashMap<String, Integer> map, Integer docID, int tokensize, double size) {
+         public static double calculateDocWeight(HashMap<String, Integer> map, Integer docID, int tokensize, double size) {
             
             double weightSummation = 0;
             double total_tftd = 0;
@@ -400,7 +396,7 @@ public class FinalTermDocumentIndexer {
             }
             
             double docLd = sqrt(weightSummation); 
-            double docLength = tokensize;
+            double docLength = total_tftd;
             double byteSize = size;
             double avg_tftd = total_tftd/map.size();
             
@@ -408,5 +404,7 @@ public class FinalTermDocumentIndexer {
             weights.add(docLength);
             weights.add(byteSize);
             weights.add(avg_tftd);
+            
+            return total_tftd;
         }
 }
