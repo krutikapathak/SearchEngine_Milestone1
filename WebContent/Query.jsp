@@ -51,98 +51,145 @@ function validate() {
 	Index soundexIndex = (Index) session.getAttribute("soundexIndex");
 	DocumentCorpus soundexCorpus = (DocumentCorpus) session.getAttribute("DocumentCorpus1");
 	String soundexDir = (String) session.getAttribute("soundexDir");
+	String dir = (String) session.getAttribute("Directory");
 	
 	String[] splittedString;
 	String resultList = "", resultTitle = "";
+	String queryType = request.getParameter("queryType");
+	if(queryType == null) {
+		queryType = (String) session.getAttribute("QueryType");
+	}
+	session.setAttribute("QueryType", queryType);
 	String query = request.getParameter("query");
-	BooleanQueryParser bqp = new BooleanQueryParser();
-	QueryComponent qc = bqp.parseQuery(query);
-	  //Special Queries
-	if (query.startsWith(":")) {
-		splittedString = query.split(" ");
-		switch (splittedString[0]) {
-		case ":q":
-			session.invalidate();
-			response.sendRedirect("Web.jsp");
-			break;
-
-		case ":stem":
-			resultTitle = "Stemmed word of \"" + splittedString[1] + "\" is: <b>" + AdvanceTokenProcessor.stemWord(splittedString[1]) + "</b>";
-			break;
-
-		case ":index": {
-			session.removeAttribute("DocumentCorpus");
-			corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(), getExtension(splittedString[1]));
-			String directory = splittedString[1].toString();
-			session.removeAttribute("Directory");
-			session.setAttribute("Directory", directory);
-			session.setAttribute("DocumentCorpus", corpus);
-			long Start = System.currentTimeMillis();
-			index = FinalTermDocumentIndexer.indexCorpus(corpus, "advance");
-			long Stop = System.currentTimeMillis();
-			long timeTaken = Stop - Start;
-			resultTitle = "Your directory <b>\"" + directory + "\"</b>";
-			resultTitle += " has been indexed in <b>" + timeTaken + "</b> ms!";
-			session.removeAttribute("Index");
-			session.setAttribute("Index", index);
-			break;
-		}
-
-		case ":vocab": {
-			List<String> vocab = index.getVocabulary();
-			int limit = 0;
-			if (vocab.size() < 1000) {
-				limit = vocab.size();
-			} else
-				limit = 1000;
-			for (int i = 0; i < limit; i++) {
-				resultList += vocab.get(i) + "</br>";
+	String formulaChoice = request.getParameter("formulaType");
+	if (formulaChoice == null) {
+		formulaChoice = (String) session.getAttribute("FormulaType");
+	}
+	session.setAttribute("FormulaType", formulaChoice);
+	DiskPositionalIndex diskIndex = new DiskPositionalIndex();
+	
+	String navigate = "";
+	
+	if(queryType.equalsIgnoreCase("boolean")){
+		navigate = "<a href='Web.jsp'>Home</a> <b>|</b> <a href='Home.jsp'>Modify Query</a>";
+		BooleanQueryParser bqp = new BooleanQueryParser();
+		QueryComponent qc = bqp.parseQuery(query);
+		  //Special Queries
+		if (query.startsWith(":")) {
+			splittedString = query.split(" ");
+			switch (splittedString[0]) {
+			case ":q":
+				session.invalidate();
+				response.sendRedirect("Web.jsp");
+				break;
+	
+			case ":stem":
+				resultTitle = "Stemmed word of \"" + splittedString[1] + "\" is: <b>" + AdvanceTokenProcessor.stemWord(splittedString[1]) + "</b>";
+				break;
+	
+			case ":index": {
+				session.removeAttribute("DocumentCorpus");
+				corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(), getExtension(splittedString[1]));
+				String directory = splittedString[1].toString();
+				session.removeAttribute("Directory");
+				session.setAttribute("Directory", directory);
+				session.setAttribute("DocumentCorpus", corpus);
+				long Start = System.currentTimeMillis();
+				index = FinalTermDocumentIndexer.indexCorpus(corpus, "advance", directory, "build");
+				long Stop = System.currentTimeMillis();
+				long timeTaken = Stop - Start;
+				resultTitle = "Your directory <b>\"" + directory + "\"</b>";
+				resultTitle += " has been indexed in <b>" + timeTaken + "</b> ms!";
+				session.removeAttribute("Index");
+				session.setAttribute("Index", index);
+				break;
 			}
-			for(int i=0; i<vocab.size(); i++)
-			resultTitle = "Your vocabulary has <b>" + vocab.size() + "</b> words! <br> Showing <b>" + limit + " </b> words";
-			break;
-		}
-		
-		case ":author": {
-			List<Posting> result = soundexIndex.getPostings(splittedString[1]);
-			resultTitle = "Your query <b>" + splittedString[1] + "</b> returned <b>" + result.size() + "</b> documents!!";
-			if(result.size() > 0) {
-				resultTitle += "<br>Click on the document you wish to open<br>";
-			} else {
-				resultTitle = "<b>Your query returned no results or your session is closed!! </b></br>";
+	
+			case ":vocab": {
+				List<String> vocab = diskIndex.getVocabulary();
+				int limit = 0;
+				if (vocab.size() < 1000) {
+					limit = vocab.size();
+				} else
+					limit = 1000;
+				for (int i = 0; i < limit; i++) {
+					resultList += vocab.get(i) + "</br>";
+				}
+				for(int i=0; i<vocab.size(); i++)
+				resultTitle = "<br> Showing <b>" + limit + " </b> words";
+				break;
 			}
-			resultList += "<table border='1' style='border-collapse: collapse;'>";
-			resultList += "<tr><td style='text-align: center;'><b>Author</b></td>";
-			resultList += "<td style='text-align: center;'><b>Document Name</b></td></tr>";
-			for (Posting p : result) {
-				String docName = soundexCorpus.getDocument(p.getDocumentId()).getTitle();
-				Reader reader;
+			
+			case ":author": {
+				List<Posting> result = soundexIndex.getPostings(splittedString[1], soundexDir);
+				resultTitle = "Your query <b>" + splittedString[1] + "</b> returned <b>" + result.size() + "</b> documents!!";
+				if(result.size() > 0) {
+					resultTitle += "<br>Click on the document you wish to open<br>";
+				} else {
+					resultTitle = "<b>Your query returned no results or your session is closed!! </b></br>";
+				}
+				resultList += "<table border='1' style='border-collapse: collapse;'>";
+				resultList += "<tr><td style='text-align: center;'><b>Author</b></td>";
+				resultList += "<td style='text-align: center;'><b>Document Name</b></td></tr>";
+				for (Posting p : result) {
+					String docName = soundexCorpus.getDocument(p.getDocumentId()).getTitle();
+					Reader reader;
 					reader = soundexCorpus.getDocument(p.getDocumentId()).getContent();
 					Gson gson = new Gson();
 					JsonObject doc = gson.fromJson(reader, JsonObject.class);
 					resultList += "<tr><td><b></b>" + doc.get("author").getAsString() + "</td>";
 					resultList += "<td><a href = 'Document.jsp?param=a" + p.getDocumentId() + "'>" + docName + "</a></td></tr>";
+				}
+				resultList += "</table>";
 			}
-			resultList += "</table>";
+			}
+		} else if(query.equalsIgnoreCase("quit")) {
+			session.invalidate();
+			response.sendRedirect("Web.jsp");
 		}
+		else {
+			// Boolean query retrieval
+			if(index !=null) {
+				List<Posting> result = qc.getPostings(diskIndex, dir);
+				resultList += "<table border='1' style='border-collapse: collapse;'>";
+				resultList += "<tr><td style='text-align: center;'><b>Title</b></td>";
+				resultList += "<td style='text-align: center;'><b>Document Name</b></td></tr>";
+				for (Posting p : result) {
+					String docName = corpus.getDocument(p.getDocumentId()).getTitle();
+					Reader reader = corpus.getDocument(p.getDocumentId()).getContent();
+					Gson gson = new Gson();
+					JsonObject doc = gson.fromJson(reader, JsonObject.class);
+					resultList += "<tr><td><b></b>" + doc.get("title").getAsString() + "</td>";
+					resultList += "<td><a href = 'Document.jsp?param=" + p.getDocumentId() + "'>" + docName + "</a></td></tr>";
+				}
+				resultTitle = "Your query <b>" + query + "</b> returned <b>" + result.size() + "</b> documents!!";
+				if(result.size() > 0) {
+					resultTitle += "<br>Click on the document you wish to open<br>";
+				}
+			} else {
+				resultTitle = "<b>Your query returned no results or your session is closed!! </b></br>";
+			}
 		}
-	} else if(query.equalsIgnoreCase("quit")) {
-		session.invalidate();
-		response.sendRedirect("Web.jsp");
-	}
-	else {
-		// Boolean query retrieval
-		if(index !=null) {
-			List<Posting> result = qc.getPostings(index);
-			for (Posting p : result) {
-				resultList += "<a href = 'Document.jsp?param=" + p.getDocumentId() + "'>" + corpus.getDocument(p.getDocumentId()).getTitle() + "</a> </br>";
-			}
-			resultTitle = "Your query <b>" + query + "</b> returned <b>" + result.size() + "</b> documents!!";
-			if(result.size() > 0) {
-				resultTitle += "<br>Click on the document you wish to open<br>";
-			}
-		} else {
-			resultTitle = "<b>Your query returned no results or your session is closed!! </b></br>";
+	} else {
+		navigate = "<a href='Web.jsp'>Home</a> <b>|</b> <a href='Home.jsp'>Modify Query</a> <b>|</b> <a href='Home.jsp?change=formula'>Modify Formula</a>";
+		RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), formulaChoice);
+		List<Posting> result = rq.getPostings(diskIndex, dir);
+		resultList += "<table border='1' style='border-collapse: collapse;'>";
+		resultList += "<tr><td style='text-align: center;'><b>Title</b></td>";
+		resultList += "<td style='text-align: center;'><b>Document Name</b></td>";
+		resultList += "<td style='text-align: center;'><b>Accumulator Value</b></td></tr>";
+		for (Posting p : result) {
+			String docName = corpus.getDocument(p.getDocumentId()).getTitle();
+			Reader reader = corpus.getDocument(p.getDocumentId()).getContent();
+			Gson gson = new Gson();
+			JsonObject doc = gson.fromJson(reader, JsonObject.class);
+			resultList += "<tr><td><b></b>" + doc.get("title").getAsString() + "</td>";
+			resultList += "<td><a href = 'Document.jsp?param=" + p.getDocumentId() + "'>" + docName + "</a></td>";
+			resultList += "<td>" + p.getAccumulator() + "</td></tr>";
+		}
+		resultTitle = "Showing Top 10 documents for your query <b>" + query + "</b>";
+		if(result.size() > 0) {
+			resultTitle += "<br>Click on the document you wish to open<br>";
 		}
 	}
 %>
@@ -153,7 +200,12 @@ function validate() {
 			    <TD style="text-align: center; font-size: 30px;">Search Engine</TD>
 			  </TR>
 			   <TR>
-			    <TD style="margin-left: auto; margin-right: auto; text-align: center; padding: 20px ">
+			    <TD style="text-align: center; font-size: 17px; padding: 20px;">
+			    	<%= navigate %>
+			    </TD>
+			  </TR>
+			   <TR>
+			    <TD style="margin-left: auto; margin-right: auto; text-align: center; padding: 10px ">
 			      <input type="text" name="query" placeholder="Enter your query or special query" style="border-radius: 25px; height: 25px; width: 400px;" />
 			      <p><input type="submit" value="Search" style="text-align: center; background-color: white; border-radius: 25px; height: 30px; width: 150px;" /></p>
 			    </TD>

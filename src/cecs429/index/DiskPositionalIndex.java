@@ -23,7 +23,7 @@ public class DiskPositionalIndex implements Index {
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "root";
+	private static final String password = "password";
 
 	public DiskPositionalIndex() {
 
@@ -131,7 +131,24 @@ public class DiskPositionalIndex implements Index {
 
 	@Override
 	public List<String> getVocabulary() {
-		return null;
+		List<String> vocab = new ArrayList<String>();
+		try {
+			// load the MySQL driver
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			// Setup the connection with the DB
+			Connection conn = DriverManager.getConnection(url, user, password);
+			statement = conn.createStatement();
+			resultSet = statement
+					.executeQuery("SELECT * FROM Milestone2.disk where Term not like '% %' order by Term asc limit 1000");
+			while (resultSet.next()) {
+				String term = resultSet.getString("Term");
+				vocab.add(term);
+			}
+			System.out.println(vocab);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return vocab;
 	}
 
 	@Override

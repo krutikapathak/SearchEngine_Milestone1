@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -44,7 +46,7 @@ public class FinalTermDocumentIndexer {
 
 	private static final String url = "jdbc:mysql://localhost:3306/Milestone2?serverTimezone=UTC";
 	private static final String user = "root";
-	private static final String password = "root";
+	private static final String password = "password";
 
 	public static void main(String[] args) throws FileNotFoundException {
 
@@ -52,14 +54,15 @@ public class FinalTermDocumentIndexer {
 		Scanner sc = new Scanner(System.in);
 		Gson gson = new Gson();
 
-		System.out.println("Enter a directory/corpus to index");
-		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/Milestone1/articles";
-		String soundexDir = "C:/Users/15625/Documents/NetBeansProjects/SearchEngine_Milestone1/mlb-articles-4000";
+		System.out.println("Enter a query mode");
+		System.out.println("1.Build Index");
+		System.out.println("2.Query Index");
+		String indexMode = sc.nextLine();
 
-		File indexDir = new File(dir + "/index");
-		indexDir.mkdirs();
-		File soundexIDir = new File(soundexDir + "/index");
-		soundexIDir.mkdirs();
+		System.out.println("Enter a directory/corpus to index");
+
+		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/SEHomework4/chapters";
+		String soundexDir = "mlb-articles-4000";
 
 		// Index corpus for Boolean Queries
 		DocumentCorpus corpus = DirectoryCorpus.loadTextDirectory(Paths.get(dir).toAbsolutePath(), getExtension(dir));
@@ -70,13 +73,8 @@ public class FinalTermDocumentIndexer {
 		DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 
 		long Start = System.currentTimeMillis();
-		Index index = indexCorpus(corpus, "advance");
-//		Path path = Paths.get("/Users/krutikapathak/eclipse-workspace/Milestone2/articles/index/postings.bin");
-//		if (!Files.exists(path)) {
-		Index soundexIndex = indexCorpus(corpusSoundex, "soundex");
-		diskIndex(indexDir, diskIndexWriter, index, "advance");
-		diskIndex(soundexIDir, diskIndexWriter, soundexIndex, "soundex");
-//		}
+		Index index = indexCorpus(corpus, "advance", dir, "build");
+		Index soundexIndex = indexCorpus(corpusSoundex, "soundex", soundexDir, indexMode);
 		long Stop = System.currentTimeMillis();
 		long timeTaken = Stop - Start;
 		System.out.println("Indexing time: " + timeTaken);
@@ -91,12 +89,12 @@ public class FinalTermDocumentIndexer {
 		} else {
 			System.out.println("You have selected Ranked Query mode");
 		}
-                
-                System.out.println("Select Weighting method:");
+
+		System.out.println("Select Weighting method:");
 		System.out.println("1.Default");
 		System.out.println("2.TF-IDF");
-                System.out.println("3.OkapiBM25");
-                System.out.println("4.Wacky");
+		System.out.println("3.OkapiBM25");
+		System.out.println("4.Wacky");
 		String rankmode = sc.nextLine();
 
 		String query = "";
@@ -124,12 +122,11 @@ public class FinalTermDocumentIndexer {
 					break;
 
 				case ":index": {
-					indexDir = new File(splittedString[1] + "/index");
+					File indexDir = new File(splittedString[1] + "/index");
 					indexDir.mkdirs();
 					corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(), ".json");
 					Start = System.currentTimeMillis();
-					index = indexCorpus(corpus, "advance");
-					diskIndex(indexDir, diskIndexWriter, index, "advance");
+					index = indexCorpus(corpus, "advance", splittedString[1], "build");
 					Stop = System.currentTimeMillis();
 					timeTaken = Stop - Start;
 					System.out.println("Indexing time: " + timeTaken);
@@ -137,7 +134,7 @@ public class FinalTermDocumentIndexer {
 				}
 
 				case ":vocab": {
-					List<String> vocab = index.getVocabulary();
+					List<String> vocab = diskIndex.getVocabulary();
 					int limit = 0;
 					if (vocab.size() < 1000) {
 						limit = vocab.size();
@@ -170,13 +167,12 @@ public class FinalTermDocumentIndexer {
 				}
 				System.out.println("Word found in " + result.size() + " documents!!");
 			} else {
-                            
-                                
-				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(),rankmode);
+
+				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 				List<Posting> result = rq.getPostings(diskIndex, dir);
 				for (Posting p : result) {
-					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle()+
-                                                " accumulator: " + p.getAccumulator());
+					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + " accumulator: "
+							+ p.getAccumulator());
 				}
 			}
 			System.out.println("Enter a word to search");
@@ -222,9 +218,10 @@ public class FinalTermDocumentIndexer {
 				preparedStatement = conn.prepareStatement("DROP TABLE IF EXISTS Milestone2.soundex");
 				preparedStatement.execute();
 
-				preparedStatement = conn.prepareStatement("CREATE TABLE Milestone2.soundex ("
-						+ "  id INT NOT NULL AUTO_INCREMENT," + "  Hashcode VARCHAR(100) NOT NULL,"
-						+ "  BytePosition INT NOT NULL," + "  PRIMARY KEY (id));");
+				preparedStatement = conn
+						.prepareStatement("CREATE TABLE Milestone2.soundex (" + "  id INT NOT NULL AUTO_INCREMENT,"
+								+ "  Hashcode VARCHAR(100) CHARACTER SET 'utf8' COLLATE 'utf8_bin' NOT NULL,"
+								+ "  BytePosition INT NOT NULL," + "  PRIMARY KEY (id));");
 				preparedStatement.execute();
 
 				preparedStatement = conn.prepareStatement("insert into Milestone2.soundex values (default, ?, ?)");
@@ -248,92 +245,103 @@ public class FinalTermDocumentIndexer {
 		}
 	}
 
-	public static Index indexCorpus(DocumentCorpus corpus, String processorType) {
+	public static Index indexCorpus(DocumentCorpus corpus, String processorType, String dir, String indexMode) {
 		EnglishTokenStream bodyTokens = null;
 		EnglishTokenStream titleTokens = null;
 		GetTokenProcessorFactory processorFactory = new GetTokenProcessorFactory();
 		TokenProcessor processor = processorFactory.GetTokenProcessor(processorType);
+		DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
 
 		Reader content;
-                int totalCorpusToken = 0;
+		int totalCorpusToken = 0;
 		Iterable<Document> list = corpus.getDocuments();
-//
-//		if (processorType == "soundex") {
-//			// indexing for soundex
-//			SoundexIndex docindex = new SoundexIndex();
-//
-//			try {
-//				for (Document d : list) {
-//
-//					content = d.getContent();
-//					Gson gson = new Gson();
-//					JsonObject doc = gson.fromJson(content, JsonObject.class);
-//
-//					String authorName = doc.get("author").getAsString();
-//
-//					if (!authorName.isEmpty()) {
-//						List<String> words = (List<String>) processor.processToken(authorName);
-//						for (String word : words) {
-//							docindex.addTerm(word, d.getId());
-//						}
-//					}
-//					content.close();
-//				}
-//				return docindex;
-//			} catch (Exception ex) {
-//				ex.printStackTrace();
-//				System.out.println(ex.toString());
-//			}
-//
-//		} else 
-{
-			PositionalInvertedIndex docindex = new PositionalInvertedIndex();
+
+		if (processorType.equalsIgnoreCase("soundex")) {
+			File soundexIDir = new File(dir + "/index");
+			soundexIDir.mkdirs();
+			// indexing for soundex
+
+			SoundexIndex docindex = new SoundexIndex();
 
 			try {
-				for (Document d : list) {
-					int positionId = 0;
-					HashMap<String, Integer> weightDoc = new HashMap<>();
-					content = d.getContent();
-                                        
-                                        File document = new File(d.getFilePath().toString());
-                                        double byteSize = (double) document.length();
-                                        int tokenCount = 0;
-                                        
-					Gson gson = new Gson();
-					try {
-						// indexing .json file's body and title for positional inverted
+				Path path = Paths.get(dir + "/index/Soundexpostings.bin");
+				if (!Files.exists(path)) {
+					for (Document d : list) {
+
+						content = d.getContent();
+						Gson gson = new Gson();
 						JsonObject doc = gson.fromJson(content, JsonObject.class);
-						JsonElement bodycontent = doc.get("body");
-						JsonElement titlecontent = doc.get("title");
-						Reader bodyReader = new StringReader(bodycontent.toString());
-						Reader titleReader = new StringReader(titlecontent.toString());
 
-						bodyTokens = new EnglishTokenStream(bodyReader);
-						titleTokens = new EnglishTokenStream(titleReader);
+						String authorName = doc.get("author").getAsString();
 
-						Iterable<String> bodytoken = bodyTokens.getTokens();
-						Iterable<String> titletoken = titleTokens.getTokens();
-
-						positionId = createIndex(processor, docindex, d, bodytoken, positionId, weightDoc);
-						positionId = createIndex(processor, docindex, d, titletoken, positionId, weightDoc);
-					} catch (JsonSyntaxException e) {
-						// indexing .txt file content for biword inverted
-						Reader txtReader = d.getContent();
-						EnglishTokenStream txtTokens = new EnglishTokenStream(txtReader);
-						Iterable<String> txtToken = txtTokens.getTokens();
-                                               
-						positionId = createIndex(processor, docindex, d, txtToken, positionId, weightDoc);
-						txtReader.close();
+						if (!authorName.isEmpty()) {
+							List<String> words = (List<String>) processor.processToken(authorName);
+							for (String word : words) {
+								docindex.addTerm(word, d.getId());
+							}
+						}
+						content.close();
 					}
-					content.close();
-					totalCorpusToken +=calculateDocWeight(weightDoc, d.getId(),tokenCount,byteSize);
+					diskIndex(soundexIDir, diskIndexWriter, docindex, "soundex");
 				}
-                                weights.add((double)totalCorpusToken);
 				return docindex;
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				System.out.println(ex.toString());
 			}
+		} else {
+			PositionalInvertedIndex docindex = new PositionalInvertedIndex();
+
+			if (indexMode.equalsIgnoreCase("build")) {
+				File indexDir = new File(dir + "/index");
+				indexDir.mkdirs();
+				try {
+					for (Document d : list) {
+						int positionId = 0;
+						HashMap<String, Integer> weightDoc = new HashMap<>();
+						content = d.getContent();
+
+						File document = new File(d.getFilePath().toString());
+						double byteSize = (double) document.length();
+						int tokenCount = 0;
+
+						Gson gson = new Gson();
+						try {
+							// indexing .json file's body and title for positional inverted
+							JsonObject doc = gson.fromJson(content, JsonObject.class);
+							JsonElement bodycontent = doc.get("body");
+							JsonElement titlecontent = doc.get("title");
+							Reader bodyReader = new StringReader(bodycontent.toString());
+							Reader titleReader = new StringReader(titlecontent.toString());
+
+							bodyTokens = new EnglishTokenStream(bodyReader);
+							titleTokens = new EnglishTokenStream(titleReader);
+
+							Iterable<String> bodytoken = bodyTokens.getTokens();
+							Iterable<String> titletoken = titleTokens.getTokens();
+
+							positionId = createIndex(processor, docindex, d, bodytoken, positionId, weightDoc);
+							positionId = createIndex(processor, docindex, d, titletoken, positionId, weightDoc);
+						} catch (JsonSyntaxException e) {
+							// indexing .txt file content for biword inverted
+							Reader txtReader = d.getContent();
+							EnglishTokenStream txtTokens = new EnglishTokenStream(txtReader);
+							Iterable<String> txtToken = txtTokens.getTokens();
+
+							positionId = createIndex(processor, docindex, d, txtToken, positionId, weightDoc);
+							txtReader.close();
+						}
+						content.close();
+						totalCorpusToken += calculateDocWeight(weightDoc, d.getId(), tokenCount, byteSize);
+					}
+					weights.add((double) (totalCorpusToken / corpus.getCorpusSize()));
+					diskIndex(indexDir, diskIndexWriter, docindex, "advance");
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					System.out.println(ex.toString());
+				}
+			}
+			return docindex;
 		}
 		return null;
 	}
