@@ -9,11 +9,6 @@ import java.util.List;
  */
 public interface QueryComponent {
     /**
-     * Retrieves a list of postings for the query, using an Index as the source.
-     */
-    List<Posting> getPostings(Index index);
-    
-    /**
 	 * Retrieves a list of postings for the query, using an Index as the source.
 	 */
 	List<Posting> getPostings(Index index, String directory);

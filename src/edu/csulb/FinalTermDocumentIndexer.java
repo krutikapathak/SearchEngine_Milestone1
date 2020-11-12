@@ -60,8 +60,7 @@ public class FinalTermDocumentIndexer {
 		String indexMode = sc.nextLine();
 
 		System.out.println("Enter a directory/corpus to index");
-
-		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/SEHomework4/chapters";
+		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/Milestone1/articles";
 		String soundexDir = "mlb-articles-4000";
 
 		// Index corpus for Boolean Queries
@@ -70,10 +69,8 @@ public class FinalTermDocumentIndexer {
 		DocumentCorpus corpusSoundex = DirectoryCorpus.loadTextDirectory(Paths.get(soundexDir).toAbsolutePath(),
 				getExtension(soundexDir));
 
-		DiskIndexWriter diskIndexWriter = new DiskIndexWriter();
-
 		long Start = System.currentTimeMillis();
-		Index index = indexCorpus(corpus, "advance", dir, "build");
+		Index index = indexCorpus(corpus, "advance", dir, indexMode);
 		Index soundexIndex = indexCorpus(corpusSoundex, "soundex", soundexDir, indexMode);
 		long Stop = System.currentTimeMillis();
 		long timeTaken = Stop - Start;
@@ -84,18 +81,19 @@ public class FinalTermDocumentIndexer {
 		System.out.println("2.Ranked Query");
 		String mode = sc.nextLine();
 
+		String rankmode = "";
+
 		if ("1".equals(mode)) {
 			System.out.println("You have selected boolean Query mode");
 		} else {
 			System.out.println("You have selected Ranked Query mode");
+			System.out.println("Select Weighting method:");
+			System.out.println("1.Default");
+			System.out.println("2.TF-IDF");
+			System.out.println("3.OkapiBM25");
+			System.out.println("4.Wacky");
+			rankmode = sc.nextLine();
 		}
-
-		System.out.println("Select Weighting method:");
-		System.out.println("1.Default");
-		System.out.println("2.TF-IDF");
-		System.out.println("3.OkapiBM25");
-		System.out.println("4.Wacky");
-		String rankmode = sc.nextLine();
 
 		String query = "";
 		String[] splittedString;
@@ -124,7 +122,8 @@ public class FinalTermDocumentIndexer {
 				case ":index": {
 					File indexDir = new File(splittedString[1] + "/index");
 					indexDir.mkdirs();
-					corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(), ".json");
+					corpus = DirectoryCorpus.loadTextDirectory(Paths.get(splittedString[1]).toAbsolutePath(),
+							getExtension(splittedString[1]));
 					Start = System.currentTimeMillis();
 					index = indexCorpus(corpus, "advance", splittedString[1], "build");
 					Stop = System.currentTimeMillis();
@@ -134,20 +133,27 @@ public class FinalTermDocumentIndexer {
 				}
 
 				case ":vocab": {
+					// To fetch from PII
+//					List<String> vocab = index.getVocabulary();
+					// to fetch from disk
 					List<String> vocab = diskIndex.getVocabulary();
 					int limit = 0;
 					if (vocab.size() < 1000) {
-						limit = vocab.size();
+						limit = vocab.size() - 1;
 					} else
 						limit = 1000;
 					for (int i = 0; i < limit; i++) {
 						System.out.println(vocab.get(i));
 					}
-					System.out.println("Total number of words in vocabulary- " + vocab.size());
+					String totalWords = vocab.get(vocab.size() - 1);
+					System.out.println("Total number of words in vocabulary- " + totalWords);
 					break;
 				}
 
 				case ":author": {
+					// to fetch from In-memory
+//					List<Posting> result = ((SoundexIndex) soundexIndex).getSoundexPostings(splittedString[1], null);
+					// to fetch from disk
 					List<Posting> result = soundexIndex.getPostings(splittedString[1], soundexDir);
 					for (Posting p : result) {
 						String docName = corpusSoundex.getDocument(p.getDocumentId()).getTitle();
@@ -161,13 +167,16 @@ public class FinalTermDocumentIndexer {
 				}
 				}
 			} else if ("1".equals(mode)) {
+				// to fetch from In-memory
+//				List<Posting> result = qc.getPostings(index, null);
+				// to fetch from disk
 				List<Posting> result = qc.getPostings(diskIndex, dir);
 				for (Posting p : result) {
+					System.out.println(p.getDocumentId());
 					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle());
 				}
 				System.out.println("Word found in " + result.size() + " documents!!");
 			} else {
-
 				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 				List<Posting> result = rq.getPostings(diskIndex, dir);
 				for (Posting p : result) {
@@ -282,6 +291,7 @@ public class FinalTermDocumentIndexer {
 						}
 						content.close();
 					}
+					// create disk Index for soundex
 					diskIndex(soundexIDir, diskIndexWriter, docindex, "soundex");
 				}
 				return docindex;
@@ -332,9 +342,10 @@ public class FinalTermDocumentIndexer {
 							txtReader.close();
 						}
 						content.close();
-						totalCorpusToken += calculateDocWeight(weightDoc, d.getId(), tokenCount, byteSize);
+						totalCorpusToken += calculateDocWeight(weightDoc, d.getId(), byteSize);
 					}
 					weights.add((double) (totalCorpusToken / corpus.getCorpusSize()));
+					// create disk Index for positional and biword
 					diskIndex(indexDir, diskIndexWriter, docindex, "advance");
 				} catch (Exception ex) {
 					ex.printStackTrace();
@@ -391,28 +402,28 @@ public class FinalTermDocumentIndexer {
 		String fileName = new File(directory).listFiles()[0].getName();
 		return fileName.substring(fileName.lastIndexOf('.'));
 	}
-        
-         public static double calculateDocWeight(HashMap<String, Integer> map, Integer docID, int tokensize, double size) {
-            
-            double weightSummation = 0;
-            double total_tftd = 0;
-            
-            for (Integer value : map.values()) {
-                double wdt = 1 + Math.log(value);
-                weightSummation += (wdt * wdt);
-                total_tftd += value;
-            }
-            
-            double docLd = sqrt(weightSummation); 
-            double docLength = total_tftd;
-            double byteSize = size;
-            double avg_tftd = total_tftd/map.size();
-            
-            weights.add(docLd);
-            weights.add(docLength);
-            weights.add(byteSize);
-            weights.add(avg_tftd);
-            
-            return total_tftd;
-        }
+
+	public static double calculateDocWeight(HashMap<String, Integer> map, Integer docID, double size) {
+
+		double weightSummation = 0;
+		double total_tftd = 0;
+
+		for (Integer value : map.values()) {
+			double wdt = 1 + Math.log(value);
+			weightSummation += (wdt * wdt);
+			total_tftd += value;
+		}
+
+		double docLd = sqrt(weightSummation);
+		double docLength = total_tftd;
+		double byteSize = size;
+		double avg_tftd = total_tftd / map.size();
+
+		weights.add(docLd);
+		weights.add(docLength);
+		weights.add(byteSize);
+		weights.add(avg_tftd);
+
+		return total_tftd;
+	}
 }

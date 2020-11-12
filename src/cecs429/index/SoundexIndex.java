@@ -75,10 +75,11 @@ public class SoundexIndex implements Index {
 		return number;
 	}
 
-	@Override
-	public List<Posting> getPostings(String term) {
-//		String normalizedTerm = term.replaceAll("\\W", "").toLowerCase();
-		String hashcode = soundex(term);
+	public List<Posting> getSoundexPostings(String term, String directory) {
+		String normalizedTerm = term;
+		if (directory == null)
+			normalizedTerm = term.replaceAll("\\W", "").toLowerCase();
+		String hashcode = soundex(normalizedTerm);
 		List<Posting> results = new ArrayList<>();
 		List<Integer> docList;
 

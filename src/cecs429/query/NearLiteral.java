@@ -39,25 +39,16 @@ public class NearLiteral implements QueryComponent {
 	}
 
 	@Override
-	public List<Posting> getPostings(Index index) {
-
-		List<Posting> result = new ArrayList<Posting>();
-
-		List<Posting> firstPosting = index.getPostings(firstTerm);
-		List<Posting> lastPosting = index.getPostings(lastTerm);
-
-		result = tempResult(firstPosting, lastPosting);
-
-		return result;
-	}
-	
-	@Override
 	public List<Posting> getPostings(Index index, String directory) {
 		List<Posting> result = new ArrayList<Posting>();
-
-		List<Posting> firstPosting = index.getPostingsDocandPos(firstTerm, directory);
-		List<Posting> lastPosting = index.getPostingsDocandPos(lastTerm, directory);
-
+		List<Posting> firstPosting, lastPosting;
+		if (directory == null) {
+			firstPosting = index.getPostings(firstTerm, directory);
+			lastPosting = index.getPostings(lastTerm, directory);
+		} else {
+			firstPosting = index.getPostingsDocandPos(firstTerm, directory);
+			lastPosting = index.getPostingsDocandPos(lastTerm, directory);
+		}
 		result = tempResult(firstPosting, lastPosting);
 
 		return result;
@@ -80,8 +71,6 @@ public class NearLiteral implements QueryComponent {
 				while (a < positionListOne.size() && b < positionListTwo.size()) {
 
 					if (positionListTwo.get(b) == positionListOne.get(a) + distance) {
-//						tempResult.add(docListTwo.get(j));
-//						break;
 						tempPosition.add(positionListTwo.get(b));
 						a++;
 						b++;

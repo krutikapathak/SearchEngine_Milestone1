@@ -27,12 +27,11 @@ public class DiskIndexWriter {
 		DataOutputStream weightsOut = new DataOutputStream(new FileOutputStream(absolutePath + "/docWeights.bin"));
 		try {
 			List<String> vocab = index.getVocabulary();
-			System.out.println("Positional: " + vocab.size());
 
 			for (int i = 0; i < vocab.size(); i++) {
 				List<Posting> postings = new ArrayList<>();
 				term = vocab.get(i);
-				postings = index.getPostings(term);
+				postings = index.getPostings(term, absolutePath);
 				int totalDocs = postings.size();
 				// write total no of docs for the term to disk
 				bytePos = dataOut.size();
@@ -42,7 +41,6 @@ public class DiskIndexWriter {
 					calcDocIdGap(dataOut, postings, j);
 
 					int termFreq = postings.get(j).getmPositionId().size();
-//					System.out.println(postings.get(j).getmPositionId());
 					// write term frequency for the doc ID to disk
 					dataOut.writeInt(termFreq);
 
@@ -65,7 +63,6 @@ public class DiskIndexWriter {
 			for (int w = 0; w < weights.size(); w++) {
 				weightsOut.writeDouble(weights.get(w));
 			}
-
 			dataOut.close();
 			weightsOut.close();
 		} catch (Exception e) {
@@ -85,36 +82,37 @@ public class DiskIndexWriter {
 		dataOut.writeInt(docIdGap);
 	}
 
-	public HashMap<String, Integer> writeBiwordSoundexIndex(Index Index, String absolutePath, String processorType)
+	public HashMap<String, Integer> writeBiwordSoundexIndex(Index index, String absolutePath, String processorType)
 			throws FileNotFoundException {
 		HashMap<String, Integer> result = new HashMap<>();
 		DataOutputStream dataOut;
 		List<String> vocab;
-		if (processorType.equalsIgnoreCase("advance")) {
-			dataOut = new DataOutputStream(new FileOutputStream(absolutePath + "/Biwordpostings.bin"));
-			vocab = Index.getBiwordVocabulary();
-			System.out.println("Biword: " + vocab.size());
-			try {
-				result = createSoundexBiwordBin(Index, dataOut, vocab, processorType);
-				dataOut.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		} else {
-			dataOut = new DataOutputStream(new FileOutputStream(absolutePath + "/Soundexpostings.bin"));
-			vocab = Index.getVocabulary();
-			System.out.println("Soundex: " + vocab.size());
-			try {
-				result = createSoundexBiwordBin(Index, dataOut, vocab, processorType);
-				dataOut.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		dataOut = getDout(absolutePath, processorType);
+		vocab = getVocab(index, processorType);
+		try {
+			result = createSoundexBiwordBin(index, dataOut, vocab, processorType);
+			dataOut.close();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 		return result;
 	}
 
-	private HashMap<String, Integer> createSoundexBiwordBin(Index Index, DataOutputStream dataOut, List<String> vocab,
+	private DataOutputStream getDout(String absolutePath, String processorType) throws FileNotFoundException {
+		if (processorType.equalsIgnoreCase("advance"))
+			return new DataOutputStream(new FileOutputStream(absolutePath + "/Biwordpostings.bin"));
+		else
+			return new DataOutputStream(new FileOutputStream(absolutePath + "/Soundexpostings.bin"));
+	}
+
+	private List<String> getVocab(Index index, String processorType) {
+		if (processorType.equalsIgnoreCase("advance"))
+			return index.getBiwordVocabulary();
+		else
+			return index.getVocabulary();
+	}
+
+	private HashMap<String, Integer> createSoundexBiwordBin(Index index, DataOutputStream dataOut, List<String> vocab,
 			String processorType) throws IOException {
 		Integer bytePos;
 		String term;
@@ -122,7 +120,7 @@ public class DiskIndexWriter {
 		for (int i = 0; i < vocab.size(); i++) {
 			List<Posting> postings = new ArrayList<>();
 			term = vocab.get(i);
-			postings = getSoundexBiwordPosting(Index, term, processorType);
+			postings = getSoundexBiwordPostings(index, processorType, term);
 			int totalDocs = postings.size();
 
 			bytePos = dataOut.size();
@@ -136,11 +134,11 @@ public class DiskIndexWriter {
 		return result;
 	}
 
-	private List<Posting> getSoundexBiwordPosting(Index Index, String term, String processorType) {
-		if (processorType.equalsIgnoreCase("advance"))
-			return ((PositionalInvertedIndex) Index).getBiwordPostings(term);
+	private List<Posting> getSoundexBiwordPostings(Index index, String processorType, String term) {
+		if (processorType.equalsIgnoreCase("soundex"))
+			return ((SoundexIndex) index).getSoundexPostings(term, "");
 		else
-			return Index.getPostings(term);
+			return index.getPostings(term, "");
 	}
 
 	public double getDocWeight(int docId, String directory) {

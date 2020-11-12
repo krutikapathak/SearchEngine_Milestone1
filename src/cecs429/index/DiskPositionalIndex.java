@@ -2,6 +2,7 @@ package cecs429.index;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -46,7 +47,6 @@ public class DiskPositionalIndex implements Index {
 				din.skipBytes(diskPos);
 				number = din.readInt();
 			}
-			System.out.println(number);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -58,7 +58,7 @@ public class DiskPositionalIndex implements Index {
 		List<Posting> result = new ArrayList<>();
 		DataInputStream din;
 		try {
-			din = new DataInputStream(new FileInputStream(directory + "/index/postings.bin"));
+			din = getDin(term, directory);
 			int totalDocs = seekByteLoc(term, din);
 			int i = 0;
 			if (totalDocs != 0) {
@@ -71,8 +71,10 @@ public class DiskPositionalIndex implements Index {
 					int docId = docIdGap + prevDocId;
 					Posting p = new Posting(docId);
 					result.add(p);
-					int freq = din.readInt();
-					din.skipBytes(freq * 4);
+					if (!term.contains(" ")) {
+						int freq = din.readInt();
+						din.skipBytes(freq * 4);
+					}
 					i++;
 				} while (i < totalDocs);
 			}
@@ -81,6 +83,15 @@ public class DiskPositionalIndex implements Index {
 			e.printStackTrace();
 		}
 		return result;
+	}
+
+	private DataInputStream getDin(String term, String directory) throws FileNotFoundException {
+		DataInputStream din;
+		if (term.contains(" ")) {
+			din = new DataInputStream(new FileInputStream(directory + "/index/Biwordpostings.bin"));
+		} else
+			din = new DataInputStream(new FileInputStream(directory + "/index/postings.bin"));
+		return din;
 	}
 
 	@Override
@@ -125,11 +136,6 @@ public class DiskPositionalIndex implements Index {
 	}
 
 	@Override
-	public List<Posting> getPostings(String term) {
-		return null;
-	}
-
-	@Override
 	public List<String> getVocabulary() {
 		List<String> vocab = new ArrayList<String>();
 		try {
@@ -138,13 +144,19 @@ public class DiskPositionalIndex implements Index {
 			// Setup the connection with the DB
 			Connection conn = DriverManager.getConnection(url, user, password);
 			statement = conn.createStatement();
-			resultSet = statement
-					.executeQuery("SELECT * FROM Milestone2.disk where Term not like '% %' order by Term asc limit 1000");
+			// fetch first 1000 words in vocab
+			resultSet = statement.executeQuery(
+					"SELECT * FROM Milestone2.disk where Term not like '% %' order by Term asc limit 1000");
 			while (resultSet.next()) {
 				String term = resultSet.getString("Term");
 				vocab.add(term);
 			}
-			System.out.println(vocab);
+			// fetch total number of words in vocab
+			resultSet = statement.executeQuery("SELECT COUNT(*)\n" + "FROM Milestone2.disk where Term not like '% %'");
+			while (resultSet.next()) {
+				String term = resultSet.getString("COUNT(*)");
+				vocab.add(term);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -155,4 +167,5 @@ public class DiskPositionalIndex implements Index {
 	public List<String> getBiwordVocabulary() {
 		return null;
 	}
+
 }

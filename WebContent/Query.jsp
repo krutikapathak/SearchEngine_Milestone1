@@ -106,21 +106,30 @@ function validate() {
 			}
 	
 			case ":vocab": {
+				// To fetch from PII
+//				List<String> vocab = index.getVocabulary();
+				// to fetch from disk
 				List<String> vocab = diskIndex.getVocabulary();
 				int limit = 0;
 				if (vocab.size() < 1000) {
-					limit = vocab.size();
+					limit = vocab.size()-1;
 				} else
 					limit = 1000;
 				for (int i = 0; i < limit; i++) {
 					resultList += vocab.get(i) + "</br>";
 				}
-				for(int i=0; i<vocab.size(); i++)
-				resultTitle = "<br> Showing <b>" + limit + " </b> words";
+				String totalWords = vocab.get(vocab.size()-1);
+				// for PII 
+			//	resultTitle = "Your vocabulary has <b>" + vocab.size() + "</b> words! <br> Showing <b>" + limit + " </b> words";
+				// for disk
+				resultTitle = "Your vocabulary has <b>" + totalWords + "</b> words! <br> Showing <b>" + limit + " </b> words";
 				break;
 			}
 			
 			case ":author": {
+				// to fetch from In-memory
+//				List<Posting> result = ((SoundexIndex) soundexIndex).getSoundexPostings(splittedString[1], null);
+				// to fetch from disk
 				List<Posting> result = soundexIndex.getPostings(splittedString[1], soundexDir);
 				resultTitle = "Your query <b>" + splittedString[1] + "</b> returned <b>" + result.size() + "</b> documents!!";
 				if(result.size() > 0) {
@@ -150,6 +159,9 @@ function validate() {
 		else {
 			// Boolean query retrieval
 			if(index !=null) {
+				// to fetch from In-memory
+//				List<Posting> result = qc.getPostings(index, null);
+				// to fetch from disk
 				List<Posting> result = qc.getPostings(diskIndex, dir);
 				resultList += "<table border='1' style='border-collapse: collapse;'>";
 				resultList += "<tr><td style='text-align: center;'><b>Title</b></td>";

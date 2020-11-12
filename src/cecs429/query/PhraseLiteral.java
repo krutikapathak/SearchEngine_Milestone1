@@ -1,12 +1,9 @@
 package cecs429.query;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import cecs429.index.DiskPositionalIndex;
 import cecs429.index.Index;
 import cecs429.index.Posting;
 
@@ -41,61 +38,33 @@ public class PhraseLiteral implements QueryComponent {
 	@Override
 	public List<Posting> getPostings(Index index, String directory) {
 		List<Posting> result = new ArrayList<Posting>();
+		List<Posting> firstTerm, secondTerm;
 
 		if (mTerms.size() != 2) {
-			List<Posting> firstTerm = index.getPostingsDocandPos(mTerms.get(0), directory);
+			firstTerm = getTerm(index, directory, 0);
 			int i = 1;
 			do {
 				result.clear();
-				List<Posting> secondTerm = index.getPostingsDocandPos(mTerms.get(i), directory);
+				secondTerm = getTerm(index, directory, i);
 				result = tempResult(firstTerm, secondTerm);
 				i++;
 				firstTerm.clear();
 				firstTerm.addAll(result);
 			} while (i < mTerms.size());
 		} else {
-			DataInputStream din;
-			DiskPositionalIndex disk = new DiskPositionalIndex();
-			try {
-				din = new DataInputStream(new FileInputStream(directory + "/index/Biwordpostings.bin"));
-				String term = mTerms.get(0) + " " + mTerms.get(1);
-				int totalDocs = disk.seekByteLoc(term, din);
-				int i = 0;
-				if (totalDocs != 0) {
-					do {
-						int docIdGap = din.readInt();
-						int prevDocId = 0;
-						if (result.size() > 0) {
-							prevDocId = result.get(i - 1).getDocumentId();
-						}
-						int docId = docIdGap + prevDocId;
-						Posting p = new Posting(docId);
-						result.add(p);
-						i++;
-					} while (i < totalDocs);
-				}
-				din.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			String term = mTerms.get(0) + " " + mTerms.get(1);
+			result = index.getPostings(term, directory);
 		}
 		return result;
 	}
 
-	@Override
-	public List<Posting> getPostings(Index index) {
-		List<Posting> result = new ArrayList<Posting>();
-		List<Posting> firstTerm = index.getPostings(mTerms.get(0));
-		int i = 1;
-		do {
-			result.clear();
-			List<Posting> secondTerm = index.getPostings(mTerms.get(i));
-			result = tempResult(firstTerm, secondTerm);
-			i++;
-			firstTerm.clear();
-			firstTerm.addAll(result);
-		} while (i < mTerms.size());
-		return result;
+	private List<Posting> getTerm(Index index, String directory, int i) {
+		List<Posting> term;
+		term = index.getPostingsDocandPos(mTerms.get(i), directory);
+		if (directory == null) {
+			term = index.getPostings(mTerms.get(i), directory);
+		}
+		return term;
 	}
 
 	private List<Posting> tempResult(List<Posting> docListOne, List<Posting> docListTwo) {
@@ -111,8 +80,6 @@ public class PhraseLiteral implements QueryComponent {
 				int a = 0, b = 0;
 				while (a < positionListOne.size() && b < positionListTwo.size()) {
 					if (positionListTwo.get(b) == positionListOne.get(a) + 1) {
-//						tempResult.add(docListTwo.get(j));
-//						break;
 						tempPosition.add(positionListTwo.get(b));
 						a++;
 						b++;

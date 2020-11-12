@@ -50,32 +50,6 @@ public class OrQuery implements QueryComponent {
 
 	}
 
-	@Override
-	public List<Posting> getPostings(Index index) {
-		List<Posting> result = new ArrayList<Posting>();
-		List<List<Posting>> tempList = new ArrayList<>();
-
-		// program the merge for an OrQuery, by gathering the postings of the
-		// composed Query children and
-
-		for (QueryComponent q : mChildren) {
-			tempList.add(q.getPostings(index));
-		}
-
-		List<Posting> tempResult = tempList.get(0);
-		int i = 1;
-		do {
-			// Adding the final union list to the Result
-			result.clear();
-			result = tempResult(tempResult, tempList.get(i));
-			i++;
-			tempResult.clear();
-			tempResult.addAll(result);
-		} while (i < tempList.size());
-
-		return result;
-	}
-
 	private List<Posting> tempResult(List<Posting> first, List<Posting> second) {
 		int i = 0;
 		int j = 0;

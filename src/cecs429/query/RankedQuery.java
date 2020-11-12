@@ -121,11 +121,4 @@ public class RankedQuery implements QueryComponent {
 		}
 		return result;
 	}
-
-	@Override
-	public List<Posting> getPostings(Index index) {
-		throw new UnsupportedOperationException("Not supported yet."); // To change body of generated methods, choose
-																		// Tools | Templates.
-	}
-
 }

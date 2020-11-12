@@ -8,11 +8,6 @@ import java.util.List;
  */
 public interface Index {
 	/**
-	 * Retrieves a list of Postings of documents that contain the given term.
-	 */
-	List<Posting> getPostings(String term);
-	
-	/**
 	 * Retrieves a list of docIds that contain the given term.
 	 */
 	List<Posting> getPostings(String term, String directory);

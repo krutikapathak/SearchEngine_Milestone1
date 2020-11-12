@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import cecs429.text.AdvanceTokenProcessor;
+
 /**
  * 
  * @author Krutika Pathak
@@ -12,7 +14,7 @@ import java.util.List;
  */
 public class PositionalInvertedIndex implements Index {
 	private final HashMap<String, List<Posting>> refinedVocab;
-	private HashMap<String, List<Integer>> biwordVocab;
+	private HashMap<String, List<Posting>> biwordVocab;
 
 	public PositionalInvertedIndex() {
 		refinedVocab = new HashMap<>();
@@ -49,40 +51,37 @@ public class PositionalInvertedIndex implements Index {
 			}
 		}
 	}
-	
+
 	public void addBiwordTerm(String term, int documentId) {
-		List<Integer> docList = biwordVocab.get(term);
+		List<Posting> docList = biwordVocab.get(term);
 
 		// if list does not exist create it
 		if (docList == null) {
-			List<Integer> new_docList = new ArrayList<>();
-			new_docList.add(documentId);
+			List<Posting> new_docList = new ArrayList<>();
+			Posting p = new Posting(documentId);
+			new_docList.add(p);
 			biwordVocab.put(term, new_docList);
 		} else {
 			// add if docID is not already in list
-			if (docList.get(docList.size() - 1) < documentId) {
-				docList.add(documentId);
+			Posting prevPosting = docList.get(docList.size() - 1);
+			if (prevPosting.getDocumentId() < documentId) {
+				Posting p = new Posting(documentId);
+				docList.add(p);
 				biwordVocab.replace(term, docList);
 			}
 		}
 	}
 
-	public List<Posting> getBiwordPostings(String term) {
-		List<Posting> result = new ArrayList<>();
-		List<Integer> docList = biwordVocab.get(term);
-		if (docList != null) {
-			for (int i = 0; i < docList.size(); i++) {
-				result.add(new Posting(docList.get(i)));
-			}
-		}
-		return result;
-	}
-
 	@Override
-	public List<Posting> getPostings(String term) {
-		// Process query and fetch the postings
+	public List<Posting> getPostings(String term, String directory) {
+		// PII query is determined based on directory value. Directory value is passed
+		// null in case of PII so that it can be identified and query can be processed
+		if (directory == null) {
+			// Process query and fetch the postings from PII
+			term = AdvanceTokenProcessor.processTerm(term);
+		}
 		List<Posting> result = new ArrayList<>();
-		List<Posting> docList = refinedVocab.get(term);
+		List<Posting> docList = getDocList(term);
 		if (docList != null) {
 			for (int i = 0; i < docList.size(); i++) {
 				result.add(docList.get(i));
@@ -90,7 +89,14 @@ public class PositionalInvertedIndex implements Index {
 		}
 		return result;
 	}
-	
+
+	private List<Posting> getDocList(String term) {
+		if (term.contains(" "))
+			return biwordVocab.get(term);
+		else
+			return refinedVocab.get(term);
+	}
+
 	@Override
 	public List<String> getBiwordVocabulary() {
 		ArrayList<String> sortedBiwordVocab = new ArrayList<String>(biwordVocab.keySet());
@@ -107,11 +113,6 @@ public class PositionalInvertedIndex implements Index {
 
 	@Override
 	public List<Posting> getPostingsDocandPos(String term, String directory) {
-		return null;
-	}
-
-	@Override
-	public List<Posting> getPostings(String term, String directory) {
 		return null;
 	}
 }
