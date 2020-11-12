@@ -16,22 +16,19 @@ public class OkapiBM25Weighting implements WeightingStrategy{
     DiskIndexWriter index = new DiskIndexWriter();
     @Override
     public double calculateWqt(int N, double dft) {
-        double a = 0.1;
-        double b = Math.log((N-dft+0.5)/(dft+0.5));
-        double wqt = Math.max(a, b);
+        double val1 = 0.1;
+        double val2 = Math.log((N-dft+0.5)/(dft+0.5));
+        double wqt = Math.max(val1, val2);
         return wqt;
     }
 
     @Override
     public double calculateWdt(int totalDoc, int docId, double tftd,String dir) {
-        double doclength = 0,doclengthA = 0;
-        doclength = index.getdocLength(docId, dir);
-         System.out.println("doc len"+doclength);
-         doclengthA = index.getdocLengthA(totalDoc, dir);
-         System.out.println(doclengthA);
-         double numerator = 2.2 * tftd;
-      double denominator = (1.2*(0.25 + ((0.75)*(doclength/doclengthA)))) + tftd;
-      double wdt = numerator/denominator;
+       double doclength = index.getdocLength(docId, dir);
+       double doclengthA = index.getdocLengthA(totalDoc, dir);
+       double dividend = 2.2 * tftd;
+       double divisor = (1.2*(0.25 + (0.75)*(doclength/doclengthA))) + tftd;
+       double wdt = dividend/divisor;
       return wdt;
     }
 

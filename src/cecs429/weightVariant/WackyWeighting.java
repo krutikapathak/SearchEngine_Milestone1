@@ -22,18 +22,16 @@ public class WackyWeighting implements WeightingStrategy{
 
     @Override
     public double calculateWdt(int totalDoc, int docId, double tftd, String dir) {
-       double avg_tftd=0;
-       avg_tftd = index.getavgtftd(docId, dir);
-       double numerator = 1 + Math.log(tftd);
-       double denominator = 1 + Math.log(avg_tftd);
-       double wdt = numerator/denominator;
+       double avg_tftd = index.getavgtftd(docId, dir);
+       double dividend = 1 + Math.log(tftd);
+       double divisor = 1 + Math.log(avg_tftd);
+       double wdt = dividend/divisor;
        return wdt;
     }
 
     @Override
     public double calculateLd(int docId, String dir) {
-        double bytesize = 0;
-        bytesize = index.getbyteSize(docId, dir);
+        double bytesize = index.getbyteSize(docId, dir);
         double LD = Math.sqrt(bytesize);
        return LD;
     }

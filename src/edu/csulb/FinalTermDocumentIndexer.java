@@ -60,6 +60,7 @@ public class FinalTermDocumentIndexer {
 		String indexMode = sc.nextLine();
 
 		System.out.println("Enter a directory/corpus to index");
+
 		String dir = sc.nextLine(); // "/Users/krutikapathak/eclipse-workspace/SEHomework4/chapters";
 		String soundexDir = "mlb-articles-4000";
 
@@ -390,28 +391,28 @@ public class FinalTermDocumentIndexer {
 		String fileName = new File(directory).listFiles()[0].getName();
 		return fileName.substring(fileName.lastIndexOf('.'));
 	}
-
-	public static double calculateDocWeight(HashMap<String, Integer> map, Integer docID, int tokensize, double size) {
-
-		double weightSummation = 0;
-		double total_tftd = 0;
-
-		for (Integer value : map.values()) {
-			double wdt = 1 + Math.log(value);
-			weightSummation += (wdt * wdt);
-			total_tftd += value;
-		}
-
-		double docLd = sqrt(weightSummation);
-		double docLength = tokensize;
-		double byteSize = size;
-		double avg_tftd = total_tftd / map.size();
-
-		weights.add(docLd);
-		weights.add(total_tftd);
-		weights.add(byteSize);
-		weights.add(avg_tftd);
-
-		return total_tftd;
-	}
+        
+         public static double calculateDocWeight(HashMap<String, Integer> map, Integer docID, int tokensize, double size) {
+            
+            double weightSummation = 0;
+            double total_tftd = 0;
+            
+            for (Integer value : map.values()) {
+                double wdt = 1 + Math.log(value);
+                weightSummation += (wdt * wdt);
+                total_tftd += value;
+            }
+            
+            double docLd = sqrt(weightSummation); 
+            double docLength = total_tftd;
+            double byteSize = size;
+            double avg_tftd = total_tftd/map.size();
+            
+            weights.add(docLd);
+            weights.add(docLength);
+            weights.add(byteSize);
+            weights.add(avg_tftd);
+            
+            return total_tftd;
+        }
 }
