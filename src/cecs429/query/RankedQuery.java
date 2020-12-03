@@ -47,7 +47,7 @@ public class RankedQuery implements QueryComponent {
 	public List<Posting> getPostings(Index index, String directory) {
 		List<Posting> result = new ArrayList<Posting>();
 		Map<Integer, Double> scoreMap = new HashMap<Integer, Double>();
-		int k = 10;
+		int k = 50;
 		int N = totalDoc;
 		double acc = 0.0;
 		Context context;
@@ -111,9 +111,9 @@ public class RankedQuery implements QueryComponent {
 			pq.offer(entry);
 		}
 
-		// get top 10 elements from the heap
+		// get top 50 elements from the heap
 		int i = 0;
-		while (pq.size() > 0 && i < 10) {
+		while (pq.size() > 0 && i < 50) {
 			Entry<Integer, Double> entry = pq.poll();
 			Posting p = new Posting(entry.getKey(), entry.getValue());
 			result.add(p);

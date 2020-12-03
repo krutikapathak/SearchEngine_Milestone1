@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
@@ -33,6 +34,7 @@ import cecs429.index.PositionalInvertedIndex;
 import cecs429.index.Posting;
 import cecs429.index.SoundexIndex;
 import cecs429.query.BooleanQueryParser;
+import cecs429.query.MapCalculator;
 import cecs429.query.QueryComponent;
 import cecs429.query.RankedQuery;
 import cecs429.text.AdvanceTokenProcessor;
@@ -48,9 +50,7 @@ public class FinalTermDocumentIndexer {
 	private static final String user = "root";
 	private static final String password = "password";
 
-	public static void main(String[] args) throws FileNotFoundException {
-
-		// Code to run the project on console. Use JSP files to run on web.
+	public static void main(String[] args) throws FileNotFoundException {// Code to run the project on console. Use JSP files to run on web.
 		Scanner sc = new Scanner(System.in);
 		Gson gson = new Gson();
 
@@ -100,6 +100,9 @@ public class FinalTermDocumentIndexer {
 
 		System.out.println("Enter a word to search");
 		query = sc.nextLine();
+		MapCalculator mc = new MapCalculator();
+		List<Integer> qRel;
+		qRel = mc.relDocs(dir, query);
 
 		while (!query.equalsIgnoreCase("quit")) {
 			DiskPositionalIndex diskIndex = new DiskPositionalIndex();
@@ -179,16 +182,21 @@ public class FinalTermDocumentIndexer {
 			} else {
 				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 				List<Posting> result = rq.getPostings(diskIndex, dir);
+				Map<Integer, Double> prec = mc.precisionCalc(result, qRel, corpus);
 				for (Posting p : result) {
-					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + " accumulator: "
-							+ p.getAccumulator());
+					String title = corpus.getDocument(p.getDocumentId()).getTitle();
+					int doc = Integer.parseInt(title.split(".json")[0]);
+					System.out.println("Document " + title + " accumulator: " + p.getAccumulator() + " Precision: "
+							+ prec.get(doc));
 				}
+//				System.out.println(docTitles);
 			}
 			System.out.println("Enter a word to search");
 			query = sc.nextLine();
+			qRel = mc.relDocs(dir, query);
 		}
 		sc.close();
-	}
+}
 
 	private static void diskIndex(File dir, DiskIndexWriter diskIndex, Index index, String processorType)
 			throws FileNotFoundException {
