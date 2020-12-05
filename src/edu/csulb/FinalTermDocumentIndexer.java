@@ -16,7 +16,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 import com.google.gson.Gson;
@@ -50,7 +49,9 @@ public class FinalTermDocumentIndexer {
 	private static final String user = "root";
 	private static final String password = "password";
 
-	public static void main(String[] args) throws FileNotFoundException {// Code to run the project on console. Use JSP files to run on web.
+	public static void main(String[] args) throws FileNotFoundException {
+		// Code to run the project on console. Use JSP
+		// files to run on web.
 		Scanner sc = new Scanner(System.in);
 		Gson gson = new Gson();
 
@@ -79,13 +80,14 @@ public class FinalTermDocumentIndexer {
 		System.out.println("Enter a query mode");
 		System.out.println("1.Boolean Query");
 		System.out.println("2.Ranked Query");
+		System.out.println("3.MAP calculator");
 		String mode = sc.nextLine();
 
 		String rankmode = "";
 
 		if ("1".equals(mode)) {
 			System.out.println("You have selected boolean Query mode");
-		} else {
+		} else if ("2".equals(mode)) {
 			System.out.println("You have selected Ranked Query mode");
 			System.out.println("Select Weighting method:");
 			System.out.println("1.Default");
@@ -93,6 +95,10 @@ public class FinalTermDocumentIndexer {
 			System.out.println("3.OkapiBM25");
 			System.out.println("4.Wacky");
 			rankmode = sc.nextLine();
+		} else {
+			MapCalculator mc = new MapCalculator();
+			mc.relDocs(dir, corpus);
+			System.exit(0);
 		}
 
 		String query = "";
@@ -100,9 +106,6 @@ public class FinalTermDocumentIndexer {
 
 		System.out.println("Enter a word to search");
 		query = sc.nextLine();
-		MapCalculator mc = new MapCalculator();
-		List<Integer> qRel;
-		qRel = mc.relDocs(dir, query);
 
 		while (!query.equalsIgnoreCase("quit")) {
 			DiskPositionalIndex diskIndex = new DiskPositionalIndex();
@@ -182,21 +185,16 @@ public class FinalTermDocumentIndexer {
 			} else {
 				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 				List<Posting> result = rq.getPostings(diskIndex, dir);
-				Map<Integer, Double> prec = mc.precisionCalc(result, qRel, corpus);
 				for (Posting p : result) {
-					String title = corpus.getDocument(p.getDocumentId()).getTitle();
-					int doc = Integer.parseInt(title.split(".json")[0]);
-					System.out.println("Document " + title + " accumulator: " + p.getAccumulator() + " Precision: "
-							+ prec.get(doc));
+					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + " accumulator: "
+							+ p.getAccumulator());
 				}
-//				System.out.println(docTitles);
 			}
 			System.out.println("Enter a word to search");
 			query = sc.nextLine();
-			qRel = mc.relDocs(dir, query);
 		}
 		sc.close();
-}
+	}
 
 	private static void diskIndex(File dir, DiskIndexWriter diskIndex, Index index, String processorType)
 			throws FileNotFoundException {
