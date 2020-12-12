@@ -16,6 +16,7 @@ import java.util.Queue;
 
 import cecs429.index.Index;
 import cecs429.index.Posting;
+import cecs429.text.AdvanceTokenProcessor;
 import cecs429.weightVariant.Context;
 import cecs429.weightVariant.DefaultWeighting;
 import cecs429.weightVariant.OkapiBM25Weighting;
@@ -33,12 +34,19 @@ public class RankedQuery implements QueryComponent {
 	private int corpusSize = 0;
 	private int totalDoc = 0;
 	private String strategy = "Default";
-	private int totalDocs = 0;
+	AdvanceTokenProcessor processor = new AdvanceTokenProcessor();
 
 	public RankedQuery(String terms, int totalDoc, String strag) {
 		List<String> termList = Arrays.asList(terms.split(" "));
 		for (String term : termList) {
-			mTerms.add(term);
+			List<String> termLists = (List<String>) processor.processToken(terms);
+			if (termLists.size() > 1) {
+				for (String procTerm : termLists) {
+					mTerms.add(procTerm);
+				}
+			} else {
+				mTerms.add(term);
+			}
 		}
 		this.totalDoc = totalDoc;
 		this.strategy = strag;
@@ -111,8 +119,6 @@ public class RankedQuery implements QueryComponent {
 		for (Map.Entry<Integer, Double> entry : scoreMap.entrySet()) {
 			pq.offer(entry);
 		}
-		
-		this.totalDocs = pq.size();
 
 		// get top 50 elements from the heap
 		int i = 0;
@@ -123,9 +129,5 @@ public class RankedQuery implements QueryComponent {
 			i++;
 		}
 		return result;
-	}
-
-	public int getTotalDocs() {
-		return totalDocs;
 	}
 }

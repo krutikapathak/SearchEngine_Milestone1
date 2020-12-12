@@ -31,7 +31,7 @@ public class DiskPositionalIndex implements Index {
 	}
 
 	public int seekByteLoc(String term, DataInputStream din) {
-		term = AdvanceTokenProcessor.processTerm(term);
+//		term = AdvanceTokenProcessor.processTerm(term);
 		int number = 0;
 		try {
 			// load the MySQL driver
@@ -59,6 +59,7 @@ public class DiskPositionalIndex implements Index {
 		DataInputStream din;
 		try {
 			din = getDin(term, directory);
+			term = AdvanceTokenProcessor.processTerm(term);
 			int totalDocs = seekByteLoc(term, din);
 			int i = 0;
 			if (totalDocs != 0) {
