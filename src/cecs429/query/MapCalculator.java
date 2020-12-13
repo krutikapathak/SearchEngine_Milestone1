@@ -58,16 +58,13 @@ public class MapCalculator {
 					}
 				}
 				Collections.sort(qrelDocs);
-//				for (Integer p : qrelDocs) {
-//					 System.out.println(p);
-//				}
 //				for (int i = 0; i < 5; i++) {
 				parseQuery(directory, corpus, rankmode, qrelDocs, query, lineNo);
 				System.out.println("=======================");
 //				}
 				mapCalc(map);
 				meanResponseTime();
-				break;
+//				break;
 			}
 		} catch (
 
@@ -96,7 +93,6 @@ public class MapCalculator {
 		double responseTime = stop - start;
 		System.out.println("responsetime:" + responseTime / 1000 + "seconds");
 		responseTimeList.add(responseTime);
-//		int totalDocs = qrelDocs.size();
 		averagePrecision(result, relDocs, totalDocs, corpus, lineNo);
 	}
 
@@ -116,9 +112,10 @@ public class MapCalculator {
 	private Map<Integer, Double> precisionRecallCalc(List<Posting> result, List<Integer> qRel, DocumentCorpus corpus,
 			int lineNo, int totalDocs) {
 		List<Integer> docs = new ArrayList<Integer>();
-		Map<Integer, Double> prec = new HashMap<Integer, Double>();
-		Map<Integer, Double> recallList = new HashMap<Integer, Double>();
 		Map<Integer, Double> relDocs = new HashMap<Integer, Double>();
+		ArrayList<Integer> docTitle = new ArrayList<Integer>();
+		ArrayList<Double> precisionList = new ArrayList<>();
+		ArrayList<Double> recList = new ArrayList<>();
 
 		for (Posting p : result) {
 			int doc = Integer.parseInt(corpus.getDocument(p.getDocumentId()).getTitle().split(".json")[0]);
@@ -127,44 +124,50 @@ public class MapCalculator {
 		double numerator = 0;
 		double precision = 0;
 		double recall = 0;
-//		double totalRelevantDoc = qRel.size();
 		int i = 0;
 		int j = 0;
+		System.out.println(totalDocs);
 
 		for (i = 0; i < docs.size(); i++) {
 			for (j = 0; j < qRel.size(); j++) {
 				if (docs.get(i) < qRel.get(j)) {
 					precision = (numerator / (i + 1));
 					recall = numerator / totalDocs;
-					verifyPrecRecallList(docs, prec, precision, i);
-					verifyPrecRecallList(docs, recallList, recall, i);
+					precRecallList(docs, docTitle, precisionList, recList, precision, recall, i);
 					break;
 				} else if (docs.get(i) > qRel.get(j)) {
 					precision = (numerator / (i + 1));
 					recall = numerator / totalDocs;
-					verifyPrecRecallList(docs, prec, precision, i);
-					verifyPrecRecallList(docs, recallList, recall, i);
+					precRecallList(docs, docTitle, precisionList, recList, precision, recall, i);
 				} else {
 					numerator++;
 					precision = (numerator / (i + 1));
 					recall = numerator / totalDocs;
-					verifyPrecRecallList(docs, prec, precision, i);
-					verifyPrecRecallList(docs, recallList, recall, i);
 					relDocs.put(docs.get(i), precision);
+					precRecallList(docs, docTitle, precisionList, recList, precision, recall, i);
 					break;
 				}
 			}
 		}
+//		for (Double preci : precisionList) {
+//			System.out.println("precision: " + preci);
+//		}
+//		for (Double rec : recList) {
+//			System.out.println("recall: " + rec);
+//		}
 		return relDocs;
 	}
 
-	private void verifyPrecRecallList(List<Integer> docs, Map<Integer, Double> precRecall, double precisionRecall,
-			int i) {
-		if (precRecall.containsKey(docs.get(i))) {
-			precRecall.replace(docs.get(i), precisionRecall);
+	private void precRecallList(List<Integer> docs, ArrayList<Integer> docTitle, ArrayList<Double> precisionList,
+			ArrayList<Double> recList, double precision, double recall, int i) {
+		if (docTitle.contains(docs.get(i))) {
+			precisionList.remove(i);
+			recList.remove(i);
 		} else {
-			precRecall.put(docs.get(i), precisionRecall);
+			docTitle.add(docs.get(i));
 		}
+		precisionList.add(i, precision);
+		recList.add(i, recall);
 	}
 
 	private void averagePrecision(List<Posting> result, Map<Integer, Double> relDocs, int totalDocs,
@@ -188,7 +191,8 @@ public class MapCalculator {
 		map.put(lineNo, avgPrec);
 
 		for (int i = 0; i < relDocIndex.size(); i++) {
-			System.out.println("Relevant: " + docs.get(relDocIndex.get(i)) + ".json at index " + relDocIndex.get(i));
+			System.out.println(
+					"Relevant: " + docs.get(relDocIndex.get(i)) + ".json at index " + (relDocIndex.get(i) + 1));
 		}
 		System.out.println("Average precision for this query: " + avgPrec);
 	}
