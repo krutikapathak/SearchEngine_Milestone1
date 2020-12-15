@@ -31,45 +31,43 @@ public class MapCalculator {
 	public void relDocs(String directory, DocumentCorpus corpus) {
 		String rankmode = userInput();
 
-		File fr = new File(directory + "/relevance/queries");
-		Scanner scanner;
-		try {
-			scanner = new Scanner(fr);
-			int lineNo = 0;
-			String line = "";
-			while (scanner.hasNextLine()) {
-				List<Integer> qrelDocs = new ArrayList<>();
-				lineNo++;
-				String query = scanner.nextLine();
-				fr = new File(directory + "/relevance/qrel");
-				Stream<String> lines;
-				try {
-					lines = Files.lines(Paths.get(directory + "/relevance/qrel"));
-					line = lines.skip(lineNo - 1).findFirst().get();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				String[] splitLine = line.split(" ");
-				if (splitLine.length != 0) {
-					for (int i = 0; i < splitLine.length; i++) {
-						if (splitLine[i].isEmpty())
-							continue;
-						qrelDocs.add(Integer.parseInt(splitLine[i]));
+		while (!rankmode.equalsIgnoreCase("quit")) {
+			File fr = new File(directory + "/relevance/queries");
+			Scanner scanner;
+			try {
+				scanner = new Scanner(fr);
+				int lineNo = 0;
+				String line = "";
+				while (scanner.hasNextLine()) {
+					List<Integer> qrelDocs = new ArrayList<>();
+					lineNo++;
+					String query = scanner.nextLine();
+					fr = new File(directory + "/relevance/qrel");
+					Stream<String> lines;
+					try {
+						lines = Files.lines(Paths.get(directory + "/relevance/qrel"));
+						line = lines.skip(lineNo - 1).findFirst().get();
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
+					String[] splitLine = line.split(" ");
+					if (splitLine.length != 0) {
+						for (int i = 0; i < splitLine.length; i++) {
+							if (splitLine[i].isEmpty())
+								continue;
+							qrelDocs.add(Integer.parseInt(splitLine[i]));
+						}
+					}
+					Collections.sort(qrelDocs);
+					parseQuery(directory, corpus, rankmode, qrelDocs, query, lineNo);
+					System.out.println("=======================");
 				}
-				Collections.sort(qrelDocs);
-//				for (int i = 0; i < 5; i++) {
-				parseQuery(directory, corpus, rankmode, qrelDocs, query, lineNo);
-				System.out.println("=======================");
-//				}
 				mapCalc(map);
 				meanResponseTime();
-//				break;
+				rankmode = userInput();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
 			}
-		} catch (
-
-		FileNotFoundException e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -81,12 +79,8 @@ public class MapCalculator {
 
 		RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 		List<Posting> result = rq.getPostings(diskIndex, directory);
-		System.out.println("=======================");
 		System.out.println("Query at line number " + lineNo + " is \"" + query + "\"");
-		for (Posting p : result) {
-			System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + " accumulator: "
-					+ p.getAccumulator());
-		}
+
 		int totalDocs = qrelDocs.size();
 		Map<Integer, Double> relDocs = precisionRecallCalc(result, qrelDocs, corpus, lineNo, totalDocs);
 		double stop = System.currentTimeMillis();
@@ -126,7 +120,7 @@ public class MapCalculator {
 		double recall = 0;
 		int i = 0;
 		int j = 0;
-		System.out.println(totalDocs);
+//		System.out.println(totalDocs);
 
 		for (i = 0; i < docs.size(); i++) {
 			for (j = 0; j < qRel.size(); j++) {
@@ -149,12 +143,6 @@ public class MapCalculator {
 				}
 			}
 		}
-//		for (Double preci : precisionList) {
-//			System.out.println("precision: " + preci);
-//		}
-//		for (Double rec : recList) {
-//			System.out.println("recall: " + rec);
-//		}
 		return relDocs;
 	}
 

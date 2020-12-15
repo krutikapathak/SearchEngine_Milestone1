@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import com.mysql.cj.xdevapi.Result;
 
 import cecs429.documents.DirectoryCorpus;
 import cecs429.documents.Document;
@@ -106,6 +107,7 @@ public class FinalTermDocumentIndexer {
 
 		System.out.println("Enter a word to search");
 		query = sc.nextLine();
+		query = query.trim();
 
 		while (!query.equalsIgnoreCase("quit")) {
 			DiskPositionalIndex diskIndex = new DiskPositionalIndex();
@@ -185,6 +187,7 @@ public class FinalTermDocumentIndexer {
 			} else {
 				RankedQuery rq = new RankedQuery(query, corpus.getCorpusSize(), rankmode);
 				List<Posting> result = rq.getPostings(diskIndex, dir);
+				System.out.println("Showing top " + result.size() + " documents!");
 				for (Posting p : result) {
 					System.out.println("Document " + corpus.getDocument(p.getDocumentId()).getTitle() + " accumulator: "
 							+ p.getAccumulator());

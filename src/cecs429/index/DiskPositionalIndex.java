@@ -47,6 +47,7 @@ public class DiskPositionalIndex implements Index {
 				din.skipBytes(diskPos);
 				number = din.readInt();
 			}
+			conn.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
